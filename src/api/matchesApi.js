@@ -14,3 +14,8 @@ export const getMatchById = async (matchId) => {
   const { data } = await http.get(`/matches/${matchId}`);
   return data;
 };
+
+export const deleteMatch = async (id) => {
+  const { data } = await http.delete(`/matches/${id}`);
+  return data;
+};

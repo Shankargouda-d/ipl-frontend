@@ -1,6 +1,78 @@
+/* Mobile base reset */
 * {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
-a {
-  color: inherit;
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  overflow-x: hidden;
+}
+
+/* Responsive container */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* Scorecard table — scrollable on mobile */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+table {
+  width: 100%;
+  min-width: 500px;
+  border-collapse: collapse;
+}
+
+/* Team cards grid */
+.teams-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  padding: 16px;
+}
+
+/* Match cards */
+.match-card {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+/* Navbar */
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 16px;
+}
+
+/* Stack scorecard teams on mobile */
+.score-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Font scaling */
+h1 { font-size: clamp(1.2rem, 4vw, 2rem); }
+h2 { font-size: clamp(1rem, 3vw, 1.5rem); }
+p, td, th { font-size: clamp(0.8rem, 2.5vw, 1rem); }
+
+/* Hide less important columns on mobile */
+@media (max-width: 480px) {
+  .hide-mobile { display: none; }
+  .teams-grid { grid-template-columns: repeat(2, 1fr); }
 }

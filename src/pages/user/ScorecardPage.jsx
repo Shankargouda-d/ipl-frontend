@@ -11,7 +11,6 @@ const ci = {
   fontSize: 13,
   outline: "none",
 };
-
 const sb = {
   padding: "10px 24px",
   borderRadius: 8,
@@ -37,10 +36,8 @@ function BattingTable({
     (s, v) => s + (parseInt(v) || 0),
     0
   );
-
   const totalRuns =
     rows.reduce((s, r) => s + (parseInt(r.runs) || 0), 0) + extTotal;
-
   const totalWickets = rows.filter(
     (r) => r.dismissal_type !== "not out"
   ).length;
@@ -48,7 +45,13 @@ function BattingTable({
   return (
     <div>
       <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+        <table
+          style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            fontSize: 13,
+          }}
+        >
           <thead>
             <tr style={{ background: "#1a1a1a" }}>
               {["Player", "Dismissal", "R", "B", "4s", "6s"].map((h) => (
@@ -70,7 +73,10 @@ function BattingTable({
           </thead>
           <tbody>
             {rows.map((r, i) => (
-              <tr key={r.player_id} style={{ borderBottom: "1px solid #1a1a1a" }}>
+              <tr
+                key={r.player_id}
+                style={{ borderBottom: "1px solid #1a1a1a" }}
+              >
                 <td style={{ padding: "8px 12px" }}>{r.player_name}</td>
                 <td style={{ padding: "8px 12px" }}>
                   <select
@@ -99,7 +105,6 @@ function BattingTable({
                     ))}
                   </select>
                 </td>
-
                 {["runs", "balls", "fours", "sixes"].map((f) => (
                   <td key={f} style={{ padding: "8px 12px" }}>
                     <input
@@ -109,11 +114,17 @@ function BattingTable({
                       onChange={(e) =>
                         setRows((prev) =>
                           prev.map((row, idx) =>
-                            idx === i ? { ...row, [f]: e.target.value } : row
+                            idx === i
+                              ? { ...row, [f]: e.target.value }
+                              : row
                           )
                         )
                       }
-                      style={{ ...ci, width: 52, textAlign: "center" }}
+                      style={{
+                        ...ci,
+                        width: 52,
+                        textAlign: "center",
+                      }}
                     />
                   </td>
                 ))}
@@ -131,11 +142,22 @@ function BattingTable({
           marginTop: 16,
         }}
       >
-        <h4 style={{ margin: "0 0 12px", color: "#888", fontSize: 13 }}>
+        <h4
+          style={{
+            margin: "0 0 12px",
+            color: "#888",
+            fontSize: 13,
+          }}
+        >
           Extras
         </h4>
-
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 16,
+            flexWrap: "wrap",
+          }}
+        >
           {["wides", "no_balls", "byes", "leg_byes"].map((f) => (
             <div key={f}>
               <label
@@ -153,12 +175,17 @@ function BattingTable({
                 type="number"
                 min="0"
                 value={extras[f]}
-                onChange={(e) => setExtras({ ...extras, [f]: e.target.value })}
-                style={{ ...ci, width: 60, textAlign: "center" }}
+                onChange={(e) =>
+                  setExtras({ ...extras, [f]: e.target.value })
+                }
+                style={{
+                  ...ci,
+                  width: 60,
+                  textAlign: "center",
+                }}
               />
             </div>
           ))}
-
           <div>
             <label
               style={{
@@ -177,7 +204,11 @@ function BattingTable({
               step="0.1"
               value={overs}
               onChange={(e) => setOvers(e.target.value)}
-              style={{ ...ci, width: 70, textAlign: "center" }}
+              style={{
+                ...ci,
+                width: 70,
+                textAlign: "center",
+              }}
             />
           </div>
         </div>
@@ -209,7 +240,13 @@ function BowlingTable({ rows, setRows, onSave, saving }) {
   return (
     <div>
       <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+        <table
+          style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            fontSize: 13,
+          }}
+        >
           <thead>
             <tr style={{ background: "#1a1a1a" }}>
               {["Player", "O", "M", "R", "W", "Wd", "NB"].map((h) => (
@@ -231,7 +268,10 @@ function BowlingTable({ rows, setRows, onSave, saving }) {
           </thead>
           <tbody>
             {rows.map((r, i) => (
-              <tr key={r.player_id} style={{ borderBottom: "1px solid #1a1a1a" }}>
+              <tr
+                key={r.player_id}
+                style={{ borderBottom: "1px solid #1a1a1a" }}
+              >
                 <td style={{ padding: "8px 12px" }}>{r.player_name}</td>
                 {[
                   "overs",
@@ -250,7 +290,9 @@ function BowlingTable({ rows, setRows, onSave, saving }) {
                       onChange={(e) =>
                         setRows((prev) =>
                           prev.map((row, idx) =>
-                            idx === i ? { ...row, [f]: e.target.value } : row
+                            idx === i
+                              ? { ...row, [f]: e.target.value }
+                              : row
                           )
                         )
                       }
@@ -268,7 +310,13 @@ function BowlingTable({ rows, setRows, onSave, saving }) {
         </table>
       </div>
 
-      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          marginTop: 16,
+        }}
+      >
         <button onClick={onSave} disabled={saving} style={sb}>
           {saving ? "Saving..." : "Save Bowling"}
         </button>
@@ -341,7 +389,6 @@ export default function ScorecardPage() {
         batting_order: i + 1,
       }))
     );
-
     setBat2(
       bsSquad.map((p, i) => ({
         player_id: p.player_id,
@@ -354,7 +401,6 @@ export default function ScorecardPage() {
         batting_order: i + 1,
       }))
     );
-
     setBowl1(
       bsSquad.map((p) => ({
         player_id: p.player_id,
@@ -367,7 +413,6 @@ export default function ScorecardPage() {
         no_balls: "0",
       }))
     );
-
     setBowl2(
       bfSquad.map((p) => ({
         player_id: p.player_id,
@@ -383,10 +428,7 @@ export default function ScorecardPage() {
   };
 
   const saveInnings = async (num) => {
-    if (!toss) {
-      setMsg("Toss missing. Complete toss setup first.");
-      return;
-    }
+    if (!toss) return setMsg("Toss missing. Complete toss setup first.");
 
     const batting = num === 1 ? bat1 : bat2;
     const bowling = num === 1 ? bowl1 : bowl2;
@@ -396,7 +438,6 @@ export default function ScorecardPage() {
     const batFirst = toss.batting_first_team_id;
     const batSecond =
       batFirst === match.team1_id ? match.team2_id : match.team1_id;
-
     const batting_team_id = num === 1 ? batFirst : batSecond;
     const bowling_team_id = num === 1 ? batSecond : batFirst;
 
@@ -404,10 +445,8 @@ export default function ScorecardPage() {
       (s, v) => s + (parseInt(v) || 0),
       0
     );
-
     const totalRuns =
       batting.reduce((s, r) => s + (parseInt(r.runs) || 0), 0) + extTotal;
-
     const totalWickets = batting.filter(
       (b) => b.dismissal_type !== "not out"
     ).length;
@@ -440,7 +479,9 @@ export default function ScorecardPage() {
         })),
       });
 
-      const activeBowlers = bowling.filter((b) => parseFloat(b.overs) > 0);
+      const activeBowlers = bowling.filter(
+        (b) => parseFloat(b.overs) > 0
+      );
 
       await http.post("/innings/bowling", {
         innings_id,
@@ -467,15 +508,20 @@ export default function ScorecardPage() {
   };
 
   const completeMatch = async () => {
-    if (!window.confirm("Mark COMPLETED? Stats and points table will auto-update.")) {
+    if (
+      !window.confirm(
+        "Mark COMPLETED? Stats and points table will auto-update."
+      )
+    )
       return;
-    }
 
     setCompleting(true);
 
     try {
       const res = await http.post("/results/complete", { match_id: id });
-      alert(`Match Complete!\n${res.data.result_text}\nPOTM: ${res.data.player_of_match}`);
+      alert(
+        `Match Complete!\n${res.data.result_text}\nPOTM: ${res.data.player_of_match}`
+      );
       navigate("/admin/dashboard");
     } catch {
       setMsg("❌ Make sure both innings are saved first.");
@@ -484,7 +530,7 @@ export default function ScorecardPage() {
     setCompleting(false);
   };
 
-  if (!match || !toss) {
+  if (!match || !toss)
     return (
       <div
         style={{
@@ -499,7 +545,6 @@ export default function ScorecardPage() {
         Loading match data...
       </div>
     );
-  }
 
   const tabs = [
     { key: "inn1-bat", label: "1st Inn Batting" },
@@ -509,7 +554,13 @@ export default function ScorecardPage() {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0f0f0f", color: "#fff" }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#0f0f0f",
+        color: "#fff",
+      }}
+    >
       <nav
         style={{
           background: "#1a1a1a",
@@ -522,24 +573,53 @@ export default function ScorecardPage() {
           gap: 10,
         }}
       >
-        <h1 style={{ margin: 0, fontSize: 16, color: "#d85a30" }}>
-          Scorecard — Match #{match.match_number}: {match.team1_short} vs {match.team2_short}
+        <h1
+          style={{
+            margin: 0,
+            fontSize: 16,
+            color: "#d85a30",
+          }}
+        >
+          Scorecard — Match #{match.match_number}: {match.team1_short} vs{" "}
+          {match.team2_short}
         </h1>
-        <Link to="/admin/dashboard" style={{ color: "#888", textDecoration: "none", fontSize: 14 }}>
+        <Link
+          to="/admin/dashboard"
+          style={{
+            color: "#888",
+            textDecoration: "none",
+            fontSize: 14,
+          }}
+        >
           ← Dashboard
         </Link>
       </nav>
 
-      <div style={{ maxWidth: 1000, margin: "0 auto", padding: "24px 16px" }}>
-        <p style={{ color: "#888", textAlign: "center", marginBottom: 20 }}>
-          Batting first: <strong style={{ color: "#fff" }}>{toss.batting_first_name}</strong>
+      <div
+        style={{
+          maxWidth: 1000,
+          margin: "0 auto",
+          padding: "24px 16px",
+        }}
+      >
+        <p
+          style={{
+            color: "#888",
+            textAlign: "center",
+            marginBottom: 20,
+          }}
+        >
+          Batting first:{" "}
+          <strong style={{ color: "#fff" }}>{toss.batting_first_name}</strong>
         </p>
 
         {msg && (
           <div
             style={{
               background: msg.startsWith("✅") ? "#1e2e1e" : "#2e1e1e",
-              border: `1px solid ${msg.startsWith("✅") ? "#3B6D11" : "#791F1F"}`,
+              border: `1px solid ${
+                msg.startsWith("✅") ? "#3B6D11" : "#791F1F"
+              }`,
               borderRadius: 8,
               padding: "10px 16px",
               marginBottom: 16,
@@ -551,7 +631,14 @@ export default function ScorecardPage() {
           </div>
         )}
 
-        <div style={{ display: "flex", gap: 4, marginBottom: 24, flexWrap: "wrap" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 4,
+            marginBottom: 24,
+            flexWrap: "wrap",
+          }}
+        >
           {tabs.map((t) => (
             <button
               key={t.key}
@@ -625,8 +712,15 @@ export default function ScorecardPage() {
             textAlign: "center",
           }}
         >
-          <p style={{ color: "#888", marginBottom: 16, fontSize: 14 }}>
-            Save both innings first, then click below. Winner, POTM, stats and points table will all auto-update.
+          <p
+            style={{
+              color: "#888",
+              marginBottom: 16,
+              fontSize: 14,
+            }}
+          >
+            Save both innings first, then click below. Winner, POTM, stats and
+            points table will all auto-update.
           </p>
           <button
             onClick={completeMatch}

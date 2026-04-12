@@ -12,21 +12,80 @@ const sb = {
   color: "#fff", border: "none", fontSize: 14, fontWeight: 600, cursor: "pointer",
 };
 
+// Fix overs: 0.6 → 1.0, 1.6 → 2.0 etc
+function fixOvers(val) {
+  const str = String(val);
+  if (!str.includes(".")) return str;
+  const [whole, dec] = str.split(".");
+  if (dec !== undefined && parseInt(dec) >= 6) {
+    return (parseInt(whole) + 1) + ".0";
+  }
+  return str;
+}
+
+// Auto calculate strike rate
+function calcSR(runs, balls) {
+  if (!balls || parseInt(balls) === 0) return "0.00";
+  return ((parseInt(runs) / parseInt(balls)) * 100).toFixed(2);
+}
+
+// Auto calculate economy
+function calcEco(runs, overs) {
+  if (!overs || parseFloat(overs) === 0) return "0.00";
+  return (parseInt(runs) / parseFloat(overs)).toFixed(2);
+}
+
+// Validation before saving
+function validateInnings(batting, bowling, overs) {
+  const errors = [];
+
+  if (parseFloat(overs) > 20) errors.push("Total overs cannot exceed 20");
+
+  const wickets = batting.filter((b) => b.dismissal_type !== "not out").length;
+  if (wickets > 10) errors.push("Wickets cannot exceed 10");
+
+  for (const b of batting) {
+    const runs = parseInt(b.runs) || 0;
+    const balls = parseInt(b.balls) || 0;
+    const fours = parseInt(b.fours) || 0;
+    const sixes = parseInt(b.sixes) || 0;
+
+    if (runs < 0) errors.push(`${b.player_name}: runs cannot be negative`);
+    if (balls < 0) errors.push(`${b.player_name}: balls cannot be negative`);
+
+    const boundaryRuns = fours * 4 + sixes * 6;
+    if (boundaryRuns > runs) {
+      errors.push(`${b.player_name}: boundary runs (${boundaryRuns}) exceed total runs (${runs})`);
+    }
+    if (balls > 0 && (fours + sixes) > balls) {
+      errors.push(`${b.player_name}: boundaries cannot exceed balls faced`);
+    }
+  }
+
+  for (const b of bowling) {
+    if (!b.player_id || !parseFloat(b.overs)) continue;
+    if (parseFloat(b.overs) > 4) {
+      errors.push(`${b.player_name}: cannot bowl more than 4 overs in T20`);
+    }
+    if (parseInt(b.wickets) > 10) {
+      errors.push(`${b.player_name}: wickets cannot exceed 10`);
+    }
+  }
+
+  return errors;
+}
+
+// ─── Batting Table ─────────────────────────────────────────────────────────
 function BattingTable({ rows, setRows, overs, setOvers, extras,
   setExtras, onSave, saving, bowlingSquad }) {
 
-  const extTotal = Object.values(extras)
-    .reduce((s, v) => s + (parseInt(v) || 0), 0);
-  const totalRuns = rows
-    .reduce((s, r) => s + (parseInt(r.runs) || 0), 0) + extTotal;
-  const totalWickets = rows
-    .filter((r) => r.dismissal_type !== "not out").length;
+  const extTotal = Object.values(extras).reduce((s, v) => s + (parseInt(v) || 0), 0);
+  const totalRuns = rows.reduce((s, r) => s + (parseInt(r.runs) || 0), 0) + extTotal;
+  const totalWickets = rows.filter((r) => r.dismissal_type !== "not out").length;
 
   const isOut = (d) => d !== "not out";
-  const needsBowler = (d) =>
-    ["bowled", "caught", "lbw", "stumped", "hit wicket"].includes(d);
-  const needsFielder = (d) =>
-    ["caught", "run out", "stumped"].includes(d);
+  const needsBowler = (d) => ["bowled", "caught", "lbw", "stumped", "hit wicket"].includes(d);
+  const needsFielder = (d) => ["caught", "run out", "stumped"].includes(d);
 
   return (
     <div>
@@ -34,10 +93,10 @@ function BattingTable({ rows, setRows, overs, setOvers, extras,
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
             <tr style={{ background: "#1a1a1a" }}>
-              {["Player", "Dismissal", "Bowler", "Fielder", "R", "B", "4s", "6s"].map((h) => (
+              {["Player", "Dismissal", "Bowler", "Fielder", "R", "B", "4s", "6s", "SR"].map((h) => (
                 <th key={h} style={{ padding: "10px 12px", textAlign: "left",
                   color: "#888", fontWeight: 600, fontSize: 12,
-                  borderBottom: "1px solid #2a2a2a" }}>
+                  borderBottom: "1px solid #2a2a2a", whiteSpace: "nowrap" }}>
                   {h}
                 </th>
               ))}
@@ -45,11 +104,10 @@ function BattingTable({ rows, setRows, overs, setOvers, extras,
           </thead>
           <tbody>
             {rows.map((r, i) => (
-              <tr key={r.player_id}
-                style={{ borderBottom: "1px solid #1a1a1a",
-                  background: isOut(r.dismissal_type) ? "#1a0f0f" : "transparent" }}>
+              <tr key={r.player_id} style={{ borderBottom: "1px solid #1a1a1a",
+                background: isOut(r.dismissal_type) ? "#1a0f0f" : "transparent" }}>
 
-                <td style={{ padding: "8px 12px",
+                <td style={{ padding: "8px 12px", whiteSpace: "nowrap",
                   color: isOut(r.dismissal_type) ? "#888" : "#fff" }}>
                   {r.player_name}
                 </td>
@@ -67,8 +125,7 @@ function BattingTable({ rows, setRows, overs, setOvers, extras,
                     ))}
                     style={ci}
                   >
-                    {["not out", "bowled", "caught", "lbw",
-                      "run out", "stumped", "hit wicket"].map((d) => (
+                    {["not out", "bowled", "caught", "lbw", "run out", "stumped", "hit wicket"].map((d) => (
                       <option key={d}>{d}</option>
                     ))}
                   </select>
@@ -79,22 +136,16 @@ function BattingTable({ rows, setRows, overs, setOvers, extras,
                     <select
                       value={r.wicket_taker_player_id || ""}
                       onChange={(e) => setRows((prev) => prev.map((row, idx) =>
-                        idx === i
-                          ? { ...row, wicket_taker_player_id: e.target.value }
-                          : row
+                        idx === i ? { ...row, wicket_taker_player_id: e.target.value } : row
                       ))}
                       style={{ ...ci, minWidth: 130 }}
                     >
                       <option value="">Select bowler</option>
                       {bowlingSquad.map((p) => (
-                        <option key={p.player_id} value={p.player_id}>
-                          {p.player_name}
-                        </option>
+                        <option key={p.player_id} value={p.player_id}>{p.player_name}</option>
                       ))}
                     </select>
-                  ) : (
-                    <span style={{ color: "#444" }}>—</span>
-                  )}
+                  ) : <span style={{ color: "#444" }}>—</span>}
                 </td>
 
                 <td style={{ padding: "8px 12px" }}>
@@ -102,22 +153,16 @@ function BattingTable({ rows, setRows, overs, setOvers, extras,
                     <select
                       value={r.fielder_player_id || ""}
                       onChange={(e) => setRows((prev) => prev.map((row, idx) =>
-                        idx === i
-                          ? { ...row, fielder_player_id: e.target.value }
-                          : row
+                        idx === i ? { ...row, fielder_player_id: e.target.value } : row
                       ))}
                       style={{ ...ci, minWidth: 130 }}
                     >
                       <option value="">Select fielder</option>
                       {bowlingSquad.map((p) => (
-                        <option key={p.player_id} value={p.player_id}>
-                          {p.player_name}
-                        </option>
+                        <option key={p.player_id} value={p.player_id}>{p.player_name}</option>
                       ))}
                     </select>
-                  ) : (
-                    <span style={{ color: "#444" }}>—</span>
-                  )}
+                  ) : <span style={{ color: "#444" }}>—</span>}
                 </td>
 
                 {["runs", "balls", "fours", "sixes"].map((f) => (
@@ -131,22 +176,26 @@ function BattingTable({ rows, setRows, overs, setOvers, extras,
                     />
                   </td>
                 ))}
+
+                {/* Strike rate auto calculated */}
+                <td style={{ padding: "8px 12px", color: "#aaa", fontSize: 12,
+                  textAlign: "center" }}>
+                  {calcSR(r.runs, r.balls)}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      <div style={{ background: "#1a1a1a", borderRadius: 8,
-        padding: 16, marginTop: 16 }}>
-        <h4 style={{ margin: "0 0 12px", color: "#888", fontSize: 13 }}>
-          Extras
-        </h4>
+      {/* Extras */}
+      <div style={{ background: "#1a1a1a", borderRadius: 8, padding: 16, marginTop: 16 }}>
+        <h4 style={{ margin: "0 0 12px", color: "#888", fontSize: 13 }}>Extras</h4>
         <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
           {["wides", "no_balls", "byes", "leg_byes"].map((f) => (
             <div key={f}>
-              <label style={{ color: "#666", fontSize: 12,
-                display: "block", marginBottom: 4, textTransform: "capitalize" }}>
+              <label style={{ color: "#666", fontSize: 12, display: "block",
+                marginBottom: 4, textTransform: "capitalize" }}>
                 {f.replace("_", " ")}
               </label>
               <input type="number" min="0" value={extras[f]}
@@ -156,25 +205,27 @@ function BattingTable({ rows, setRows, overs, setOvers, extras,
             </div>
           ))}
           <div>
-            <label style={{ color: "#666", fontSize: 12,
-              display: "block", marginBottom: 4 }}>
+            <label style={{ color: "#666", fontSize: 12, display: "block", marginBottom: 4 }}>
               Overs
             </label>
-            <input type="number" min="0" max="20" step="0.1" value={overs}
-              onChange={(e) => setOvers(e.target.value)}
+            <input
+              type="number" min="0" max="20" step="0.1" value={overs}
+              onChange={(e) => setOvers(fixOvers(e.target.value))}
               style={{ ...ci, width: 70, textAlign: "center" }}
             />
           </div>
         </div>
       </div>
 
+      {/* Total row */}
       <div style={{ display: "flex", justifyContent: "space-between",
         alignItems: "center", marginTop: 16 }}>
         <div style={{ color: "#888", fontSize: 14 }}>
           Total:{" "}
-          <strong style={{ color: "#fff", fontSize: 18 }}>
-            {totalRuns}/{totalWickets}
-          </strong>
+          <strong style={{ color: "#fff", fontSize: 18 }}>{totalRuns}/{totalWickets}</strong>
+          <span style={{ marginLeft: 8, fontSize: 13, color: "#666" }}>
+            ({overs || 0} ov) · Extras: {extTotal}
+          </span>
         </div>
         <button onClick={onSave} disabled={saving} style={sb}>
           {saving ? "Saving..." : "Save Innings"}
@@ -184,6 +235,7 @@ function BattingTable({ rows, setRows, overs, setOvers, extras,
   );
 }
 
+// ─── Bowling Table ──────────────────────────────────────────────────────────
 function BowlingTable({ rows, setRows, onSave, saving }) {
   return (
     <div>
@@ -191,7 +243,7 @@ function BowlingTable({ rows, setRows, onSave, saving }) {
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
             <tr style={{ background: "#1a1a1a" }}>
-              {["Player", "O", "M", "R", "W", "Wd", "NB"].map((h) => (
+              {["Player", "O", "M", "R", "W", "Eco", "Wd", "NB"].map((h) => (
                 <th key={h} style={{ padding: "10px 12px", textAlign: "left",
                   color: "#888", fontWeight: 600, fontSize: 12,
                   borderBottom: "1px solid #2a2a2a" }}>
@@ -202,27 +254,43 @@ function BowlingTable({ rows, setRows, onSave, saving }) {
           </thead>
           <tbody>
             {rows.map((r, i) => (
-              <tr key={r.player_id}
-                style={{ borderBottom: "1px solid #1a1a1a" }}>
+              <tr key={r.player_id} style={{ borderBottom: "1px solid #1a1a1a" }}>
                 <td style={{ padding: "8px 12px" }}>{r.player_name}</td>
-                {["overs", "maidens", "runs_conceded", "wickets",
-                  "wides", "no_balls"].map((f) => (
+
+                {/* Overs with auto fix */}
+                <td style={{ padding: "8px 12px" }}>
+                  <input
+                    type="number" min="0" max="4" step="0.1"
+                    value={r.overs}
+                    onChange={(e) => {
+                      const fixed = fixOvers(e.target.value);
+                      setRows((prev) => prev.map((row, idx) =>
+                        idx === i ? { ...row, overs: fixed } : row
+                      ));
+                    }}
+                    style={{ ...ci, width: 60, textAlign: "center" }}
+                  />
+                </td>
+
+                {/* Maidens, Runs, Wickets, Wides, NB */}
+                {["maidens", "runs_conceded", "wickets", "wides", "no_balls"].map((f) => (
                   <td key={f} style={{ padding: "8px 12px" }}>
                     <input
-                      type="number" min="0"
-                      step={f === "overs" ? "0.1" : "1"}
+                      type="number" min="0" step="1"
                       value={r[f]}
                       onChange={(e) => setRows((prev) => prev.map((row, idx) =>
                         idx === i ? { ...row, [f]: e.target.value } : row
                       ))}
-                      style={{
-                        ...ci,
-                        width: f === "overs" ? 60 : 52,
-                        textAlign: "center",
-                      }}
+                      style={{ ...ci, width: 52, textAlign: "center" }}
                     />
                   </td>
                 ))}
+
+                {/* Economy auto calculated */}
+                <td style={{ padding: "8px 12px", color: "#aaa", fontSize: 12,
+                  textAlign: "center" }}>
+                  {calcEco(r.runs_conceded, r.overs)}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -237,6 +305,7 @@ function BowlingTable({ rows, setRows, onSave, saving }) {
   );
 }
 
+// ─── Main Page ──────────────────────────────────────────────────────────────
 export default function ScorecardPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -245,21 +314,20 @@ export default function ScorecardPage() {
   const [toss, setToss] = useState(null);
   const [bfSquad, setBfSquad] = useState([]);
   const [bsSquad, setBsSquad] = useState([]);
+  const [allPlayers, setAllPlayers] = useState([]);
   const [activeTab, setActiveTab] = useState("inn1-bat");
   const [saving, setSaving] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [msg, setMsg] = useState("");
   const [loadError, setLoadError] = useState("");
+  const [potmPlayerId, setPotmPlayerId] = useState("");
+
   const [bat1, setBat1] = useState([]);
   const [bat2, setBat2] = useState([]);
   const [bowl1, setBowl1] = useState([]);
   const [bowl2, setBowl2] = useState([]);
-  const [ext1, setExt1] = useState({
-    wides: 0, no_balls: 0, byes: 0, leg_byes: 0
-  });
-  const [ext2, setExt2] = useState({
-    wides: 0, no_balls: 0, byes: 0, leg_byes: 0
-  });
+  const [ext1, setExt1] = useState({ wides: 0, no_balls: 0, byes: 0, leg_byes: 0 });
+  const [ext2, setExt2] = useState({ wides: 0, no_balls: 0, byes: 0, leg_byes: 0 });
   const [inn1Overs, setInn1Overs] = useState("");
   const [inn2Overs, setInn2Overs] = useState("");
 
@@ -297,77 +365,65 @@ export default function ScorecardPage() {
 
       setBfSquad(batFirstSquad);
       setBsSquad(batSecondSquad);
+      setAllPlayers([...sq1.data, ...sq2.data]);
 
       setBat1(batFirstSquad.map((p, i) => ({
-        player_id: p.player_id,
-        player_name: p.player_name,
+        player_id: p.player_id, player_name: p.player_name,
         runs: "", balls: "", fours: "", sixes: "",
         dismissal_type: "not out",
-        wicket_taker_player_id: "",
-        fielder_player_id: "",
+        wicket_taker_player_id: "", fielder_player_id: "",
         batting_order: i + 1,
       })));
 
       setBat2(batSecondSquad.map((p, i) => ({
-        player_id: p.player_id,
-        player_name: p.player_name,
+        player_id: p.player_id, player_name: p.player_name,
         runs: "", balls: "", fours: "", sixes: "",
         dismissal_type: "not out",
-        wicket_taker_player_id: "",
-        fielder_player_id: "",
+        wicket_taker_player_id: "", fielder_player_id: "",
         batting_order: i + 1,
       })));
 
       setBowl1(batSecondSquad.map((p) => ({
-        player_id: p.player_id,
-        player_name: p.player_name,
-        overs: "", maidens: "0",
-        runs_conceded: "", wickets: "",
-        wides: "0", no_balls: "0",
+        player_id: p.player_id, player_name: p.player_name,
+        overs: "", maidens: "0", runs_conceded: "",
+        wickets: "", wides: "0", no_balls: "0",
       })));
 
       setBowl2(batFirstSquad.map((p) => ({
-        player_id: p.player_id,
-        player_name: p.player_name,
-        overs: "", maidens: "0",
-        runs_conceded: "", wickets: "",
-        wides: "0", no_balls: "0",
+        player_id: p.player_id, player_name: p.player_name,
+        overs: "", maidens: "0", runs_conceded: "",
+        wickets: "", wides: "0", no_balls: "0",
       })));
 
     } catch (e) {
       console.error("loadData error:", e);
-      setLoadError(
-        e?.response?.data?.error || e.message || "Failed to load match data"
-      );
+      setLoadError(e?.response?.data?.error || e.message || "Failed to load match data");
     }
   };
 
   const saveInnings = async (num) => {
-    if (!toss) {
-      setMsg("Toss missing. Complete toss setup first.");
-      return;
-    }
+    if (!toss) { setMsg("Toss missing. Complete toss setup first."); return; }
 
     const batting = num === 1 ? bat1 : bat2;
     const bowling = num === 1 ? bowl1 : bowl2;
     const extras = num === 1 ? ext1 : ext2;
     const overs = num === 1 ? inn1Overs : inn2Overs;
 
-    const batFirstId = toss.batting_first_team_id;
-    const batSecondId =
-      batFirstId === match.team1_id ? match.team2_id : match.team1_id;
+    const errors = validateInnings(batting, bowling, overs);
+    if (errors.length > 0) {
+      setMsg("❌ " + errors.join(" | "));
+      return;
+    }
 
+    const batFirstId = toss.batting_first_team_id;
+    const batSecondId = batFirstId === match.team1_id ? match.team2_id : match.team1_id;
     const batting_team_id = num === 1 ? batFirstId : batSecondId;
     const bowling_team_id = num === 1 ? batSecondId : batFirstId;
 
-    const extTotal = Object.values(extras)
-      .reduce((s, v) => s + (parseInt(v) || 0), 0);
-    const totalRuns =
-      batting.reduce((s, r) => s + (parseInt(r.runs) || 0), 0) + extTotal;
-    const totalWickets =
-      batting.filter((b) => b.dismissal_type !== "not out").length;
-    const activeBowlers =
-      bowling.filter((b) => parseFloat(b.overs) > 0);
+    const extTotal = Object.values(extras).reduce((s, v) => s + (parseInt(v) || 0), 0);
+    const totalRuns = batting.reduce((s, r) => s + (parseInt(r.runs) || 0), 0) + extTotal;
+    const totalWickets = batting.filter((b) => b.dismissal_type !== "not out").length;
+    const activeBowlers = bowling.filter((b) => parseFloat(b.overs) > 0);
 
     setSaving(true);
     try {
@@ -402,7 +458,7 @@ export default function ScorecardPage() {
         })),
       });
 
-      setMsg(`✅ Innings ${num} saved! Total: ${totalRuns}/${totalWickets}`);
+      setMsg(`✅ Innings ${num} saved! Total: ${totalRuns}/${totalWickets} (${overs} ov)`);
     } catch (e) {
       setMsg("❌ Error: " + (e?.response?.data?.error || e.message));
     }
@@ -410,16 +466,19 @@ export default function ScorecardPage() {
   };
 
   const completeMatch = async () => {
-    if (!window.confirm(
-      "Mark COMPLETED? Stats and points table will auto-update."
-    )) return;
+    if (!potmPlayerId) {
+      setMsg("❌ Please select Player of the Match before completing.");
+      return;
+    }
+    if (!window.confirm("Mark COMPLETED? Stats and points table will auto-update.")) return;
 
     setCompleting(true);
     try {
-      const res = await http.post("/results/complete", { match_id: id });
-      alert(
-        `Match Complete!\n${res.data.result_text}\nPOTM: ${res.data.player_of_match}`
-      );
+      const res = await http.post("/results/complete", {
+        match_id: id,
+        player_of_match_id: potmPlayerId,
+      });
+      alert(`Match Complete!\n${res.data.result_text}\nPOTM: ${res.data.player_of_match}`);
       navigate("/admin/dashboard");
     } catch {
       setMsg("❌ Make sure both innings are saved first.");
@@ -427,16 +486,15 @@ export default function ScorecardPage() {
     setCompleting(false);
   };
 
+  // ── Screens ────────────────────────────────────────────────────────────────
+
   if (loadError) {
     return (
       <div style={{ minHeight: "100vh", background: "#0f0f0f",
         display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center",
-        color: "#fff", gap: 16 }}>
+        alignItems: "center", justifyContent: "center", color: "#fff", gap: 16 }}>
         <p style={{ color: "#F09595", fontSize: 16 }}>❌ {loadError}</p>
-        <button onClick={() => navigate("/admin/dashboard")} style={sb}>
-          ← Back to Dashboard
-        </button>
+        <button onClick={() => navigate("/admin/dashboard")} style={sb}>← Back to Dashboard</button>
       </div>
     );
   }
@@ -444,8 +502,7 @@ export default function ScorecardPage() {
   if (!match) {
     return (
       <div style={{ minHeight: "100vh", background: "#0f0f0f",
-        display: "flex", alignItems: "center",
-        justifyContent: "center", color: "#fff" }}>
+        display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>
         Loading match data...
       </div>
     );
@@ -455,17 +512,10 @@ export default function ScorecardPage() {
     return (
       <div style={{ minHeight: "100vh", background: "#0f0f0f",
         display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center",
-        color: "#fff", gap: 16 }}>
-        <p style={{ color: "#F09595", fontSize: 16 }}>
-          Toss not recorded for this match yet.
-        </p>
-        <p style={{ color: "#888", fontSize: 14 }}>
-          Please complete the toss before entering scores.
-        </p>
-        <button onClick={() => navigate("/admin/dashboard")} style={sb}>
-          ← Back to Dashboard
-        </button>
+        alignItems: "center", justifyContent: "center", color: "#fff", gap: 16 }}>
+        <p style={{ color: "#F09595", fontSize: 16 }}>⚠️ Toss not recorded for this match yet.</p>
+        <p style={{ color: "#888", fontSize: 14 }}>Please complete the toss before entering scores.</p>
+        <button onClick={() => navigate("/admin/dashboard")} style={sb}>← Back to Dashboard</button>
       </div>
     );
   }
@@ -481,21 +531,19 @@ export default function ScorecardPage() {
     <div style={{ minHeight: "100vh", background: "#0f0f0f", color: "#fff" }}>
       <nav style={{ background: "#1a1a1a", borderBottom: "1px solid #2a2a2a",
         padding: "14px 24px", display: "flex",
-        justifyContent: "space-between", alignItems: "center",
-        flexWrap: "wrap", gap: 10 }}>
+        justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
         <h1 style={{ margin: 0, fontSize: 16, color: "#d85a30" }}>
           Scorecard — {match.team1_name} vs {match.team2_name}
         </h1>
-        <Link to="/admin/dashboard"
-          style={{ color: "#888", textDecoration: "none", fontSize: 14 }}>
+        <Link to="/admin/dashboard" style={{ color: "#888", textDecoration: "none", fontSize: 14 }}>
           ← Dashboard
         </Link>
       </nav>
 
       <div style={{ maxWidth: 1000, margin: "0 auto", padding: "24px 16px" }}>
+
         <p style={{ color: "#888", textAlign: "center", marginBottom: 20 }}>
-          Batting first:{" "}
-          <strong style={{ color: "#fff" }}>{toss.batting_first_name}</strong>
+          Batting first: <strong style={{ color: "#fff" }}>{toss.batting_first_name}</strong>
         </p>
 
         {msg && (
@@ -509,6 +557,7 @@ export default function ScorecardPage() {
           </div>
         )}
 
+        {/* Tabs */}
         <div style={{ display: "flex", gap: 4, marginBottom: 24, flexWrap: "wrap" }}>
           {tabs.map((t) => (
             <button key={t.key} onClick={() => setActiveTab(t.key)}
@@ -522,48 +571,91 @@ export default function ScorecardPage() {
         </div>
 
         {activeTab === "inn1-bat" && (
-          <BattingTable
-            rows={bat1} setRows={setBat1}
+          <BattingTable rows={bat1} setRows={setBat1}
             overs={inn1Overs} setOvers={setInn1Overs}
             extras={ext1} setExtras={setExt1}
             onSave={() => saveInnings(1)} saving={saving}
-            bowlingSquad={bsSquad}
-          />
+            bowlingSquad={bsSquad} />
         )}
         {activeTab === "inn1-bowl" && (
-          <BowlingTable
-            rows={bowl1} setRows={setBowl1}
-            onSave={() => saveInnings(1)} saving={saving}
-          />
+          <BowlingTable rows={bowl1} setRows={setBowl1}
+            onSave={() => saveInnings(1)} saving={saving} />
         )}
         {activeTab === "inn2-bat" && (
-          <BattingTable
-            rows={bat2} setRows={setBat2}
+          <BattingTable rows={bat2} setRows={setBat2}
             overs={inn2Overs} setOvers={setInn2Overs}
             extras={ext2} setExtras={setExt2}
             onSave={() => saveInnings(2)} saving={saving}
-            bowlingSquad={bfSquad}
-          />
+            bowlingSquad={bfSquad} />
         )}
         {activeTab === "inn2-bowl" && (
-          <BowlingTable
-            rows={bowl2} setRows={setBowl2}
-            onSave={() => saveInnings(2)} saving={saving}
-          />
+          <BowlingTable rows={bowl2} setRows={setBowl2}
+            onSave={() => saveInnings(2)} saving={saving} />
         )}
 
+        {/* Complete match section */}
         <div style={{ marginTop: 40, padding: 24, background: "#1a1a1a",
-          border: "1px solid #2a2a2a", borderRadius: 12, textAlign: "center" }}>
-          <p style={{ color: "#888", marginBottom: 16, fontSize: 14 }}>
-            Save both innings first, then click below. Winner, POTM,
-            stats and points table will all auto-update.
+          border: "1px solid #2a2a2a", borderRadius: 12 }}>
+
+          <h3 style={{ margin: "0 0 8px", fontSize: 15, color: "#fff" }}>
+            Complete Match
+          </h3>
+          <p style={{ color: "#888", fontSize: 13, marginBottom: 20 }}>
+            Save both innings first. Then select Player of the Match and mark as completed.
           </p>
-          <button onClick={completeMatch} disabled={completing}
-            style={{ padding: "14px 36px", borderRadius: 10,
-              background: "#639922", color: "#fff", border: "none",
-              fontSize: 16, fontWeight: 700, cursor: "pointer" }}>
-            {completing ? "Processing..." : "✅ Mark Match as Completed"}
-          </button>
+
+          {/* POTM — manual selection */}
+          <div style={{ marginBottom: 24 }}>
+            <label style={{ color: "#aaa", fontSize: 13, display: "block", marginBottom: 8 }}>
+              Player of the Match
+            </label>
+            <select
+              value={potmPlayerId}
+              onChange={(e) => setPotmPlayerId(e.target.value)}
+              style={{ ...ci, minWidth: 240, padding: "8px 12px", fontSize: 14 }}
+            >
+              <option value="">— Select player —</option>
+              <optgroup label={match.team1_name}>
+                {allPlayers
+                  .filter((p) => p.team_id === match.team1_id)
+                  .map((p) => (
+                    <option key={p.player_id} value={p.player_id}>
+                      {p.player_name}
+                    </option>
+                  ))}
+              </optgroup>
+              <optgroup label={match.team2_name}>
+                {allPlayers
+                  .filter((p) => p.team_id === match.team2_id)
+                  .map((p) => (
+                    <option key={p.player_id} value={p.player_id}>
+                      {p.player_name}
+                    </option>
+                  ))}
+              </optgroup>
+            </select>
+          </div>
+
+          <div style={{ textAlign: "center" }}>
+            <button
+              onClick={completeMatch}
+              disabled={completing || !potmPlayerId}
+              style={{
+                padding: "14px 36px", borderRadius: 10, border: "none",
+                fontSize: 16, fontWeight: 700,
+                background: potmPlayerId ? "#639922" : "#2a2a2a",
+                color: potmPlayerId ? "#fff" : "#555",
+                cursor: potmPlayerId ? "pointer" : "not-allowed",
+              }}
+            >
+              {completing ? "Processing..." : "✅ Mark Match as Completed"}
+            </button>
+            {!potmPlayerId && (
+              <p style={{ color: "#666", fontSize: 12, marginTop: 8 }}>
+                Select Player of the Match to enable this button
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>

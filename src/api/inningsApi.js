@@ -6,6 +6,6 @@ export const saveInnings = async (payload) => {
 };
 
 export const getInningsByMatch = async (matchId) => {
-  const { data } = await http.get(`/innings/${matchId}`);
+  const { data } = await http.get(`/innings/match/${matchId}`);
   return data;
 };

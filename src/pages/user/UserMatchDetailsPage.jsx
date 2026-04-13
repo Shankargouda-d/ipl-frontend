@@ -26,17 +26,21 @@ function Navbar() {
       >
         🏏 IPL
       </Link>
-      {[["Matches", "/matches"], ["Stats", "/stats"], ["Points", "/points"]].map(
-        ([l, h]) => (
-          <Link
-            key={l}
-            to={h}
-            style={{ color: "#888", textDecoration: "none", fontSize: 14 }}
-          >
-            {l}
-          </Link>
-        )
-      )}
+
+      {[
+        ["Matches", "/matches"],
+        ["Stats", "/stats"],
+        ["Points", "/points"],
+      ].map(([label, href]) => (
+        <Link
+          key={label}
+          to={href}
+          style={{ color: "#888", textDecoration: "none", fontSize: 14 }}
+        >
+          {label}
+        </Link>
+      ))}
+
       <div style={{ marginLeft: "auto" }}>
         <Link
           to="/admin"
@@ -66,24 +70,24 @@ const tdS = {
 };
 
 function calcSR(runs, balls) {
-  if (!balls || parseInt(balls) === 0) return "-";
-  return ((parseInt(runs) / parseInt(balls)) * 100).toFixed(2);
+  if (!balls || parseInt(balls, 10) === 0) return "-";
+  return ((parseInt(runs, 10) / parseInt(balls, 10)) * 100).toFixed(2);
 }
 
 function calcEco(runs, overs) {
   if (!overs || parseFloat(overs) === 0) return "-";
-  return (parseInt(runs) / parseFloat(overs)).toFixed(2);
+  return (parseInt(runs, 10) / parseFloat(overs)).toFixed(2);
 }
 
 function getDismissalText(b) {
   if (!b.dismissal_type || b.dismissal_type === "not out") {
-    return (
-      <span style={{ color: "#639922", fontWeight: 500 }}>not out</span>
-    );
+    return <span style={{ color: "#639922", fontWeight: 500 }}>not out</span>;
   }
+
   if (b.dismissal_type === "did not bat") {
     return <span style={{ color: "#555" }}>did not bat</span>;
   }
+
   if (b.dismissal_type === "bowled") {
     return (
       <span>
@@ -91,6 +95,7 @@ function getDismissalText(b) {
       </span>
     );
   }
+
   if (b.dismissal_type === "lbw") {
     return (
       <span>
@@ -98,6 +103,7 @@ function getDismissalText(b) {
       </span>
     );
   }
+
   if (b.dismissal_type === "caught") {
     if (
       b.fielder_name &&
@@ -111,12 +117,14 @@ function getDismissalText(b) {
         </span>
       );
     }
+
     return (
       <span>
         c &amp; b <strong>{b.wicket_taker_name || ""}</strong>
       </span>
     );
   }
+
   if (b.dismissal_type === "stumped") {
     return (
       <span>
@@ -125,14 +133,15 @@ function getDismissalText(b) {
       </span>
     );
   }
+
   if (b.dismissal_type === "run out") {
     return (
       <span>
-        run out{" "}
-        {b.fielder_name ? <strong>({b.fielder_name})</strong> : ""}
+        run out {b.fielder_name ? <strong>({b.fielder_name})</strong> : ""}
       </span>
     );
   }
+
   if (b.dismissal_type === "hit wicket") {
     return (
       <span>
@@ -140,11 +149,12 @@ function getDismissalText(b) {
       </span>
     );
   }
+
   return <span style={{ color: "#888" }}>{b.dismissal_type}</span>;
 }
 
 function oversDisplay(inn) {
-  if (inn.total_wickets >= 10) {
+  if (Number(inn.total_wickets) >= 10) {
     return `All out · ${inn.overs} ov`;
   }
   return `${inn.overs} ov`;
@@ -152,6 +162,7 @@ function oversDisplay(inn) {
 
 export default function UserMatchDetailsPage() {
   const { id } = useParams();
+
   const [match, setMatch] = useState(null);
   const [innings, setInnings] = useState([]);
   const [batting, setBatting] = useState({});
@@ -161,13 +172,12 @@ export default function UserMatchDetailsPage() {
 
   useEffect(() => {
     loadAll();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const loadAll = async () => {
+    setLoading(true);
+
     try {
-      // 1) Load match and innings
-      // NOTE: using /innings/match/:matchId to match backend router
       const [mr, ir] = await Promise.all([
         http.get(`/matches/${id}`),
         http.get(`/innings/match/${id}`),
@@ -179,7 +189,6 @@ export default function UserMatchDetailsPage() {
       const batMap = {};
       const bowlMap = {};
 
-      // 2) Load batting & bowling for each innings
       await Promise.all(
         (ir.data || []).map(async (inn) => {
           try {
@@ -187,6 +196,7 @@ export default function UserMatchDetailsPage() {
               http.get(`/innings/${inn.innings_id}/batting`),
               http.get(`/innings/${inn.innings_id}/bowling`),
             ]);
+
             batMap[inn.innings_id] = batRes.data || [];
             bowlMap[inn.innings_id] = bowlRes.data || [];
           } catch (e) {
@@ -201,11 +211,12 @@ export default function UserMatchDetailsPage() {
       setBowling(bowlMap);
     } catch (e) {
       console.error("loadAll error:", e);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  if (loading)
+  if (loading) {
     return (
       <div
         style={{
@@ -221,8 +232,9 @@ export default function UserMatchDetailsPage() {
         Loading scorecard...
       </div>
     );
+  }
 
-  if (!match)
+  if (!match) {
     return (
       <div
         style={{
@@ -237,18 +249,16 @@ export default function UserMatchDetailsPage() {
         Match not found.
       </div>
     );
+  }
 
   const currentInnings = innings[activeInnings];
-  const batRows = currentInnings
-    ? batting[currentInnings.innings_id] || []
-    : [];
-  const bowlRows = currentInnings
-    ? bowling[currentInnings.innings_id] || []
-    : [];
+  const batRows = currentInnings ? batting[currentInnings.innings_id] || [] : [];
+  const bowlRows = currentInnings ? bowling[currentInnings.innings_id] || [] : [];
 
   return (
     <div style={{ minHeight: "100vh", background: "#0a0a0a", color: "#fff" }}>
       <Navbar />
+
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "32px 16px" }}>
         <Link
           to="/matches"
@@ -257,14 +267,15 @@ export default function UserMatchDetailsPage() {
           ← All Matches
         </Link>
 
-        {/* Match header */}
         <div style={{ textAlign: "center", margin: "24px 0 32px" }}>
           <div style={{ color: "#888", fontSize: 13, marginBottom: 6 }}>
             Match #{match.match_number}
           </div>
+
           <h1 style={{ fontSize: 24, margin: "0 0 8px" }}>
             {match.team1_name} vs {match.team2_name}
           </h1>
+
           <p
             style={{
               color: "#888",
@@ -274,6 +285,7 @@ export default function UserMatchDetailsPage() {
           >
             {new Date(match.match_date).toDateString()} · {match.venue}
           </p>
+
           {match.result_text && (
             <p
               style={{
@@ -286,6 +298,7 @@ export default function UserMatchDetailsPage() {
               {match.result_text}
             </p>
           )}
+
           {match.potm_name && (
             <p style={{ color: "#EF9F27", fontSize: 14, marginTop: 4 }}>
               🏅 Player of the Match: <strong>{match.potm_name}</strong>
@@ -301,7 +314,6 @@ export default function UserMatchDetailsPage() {
           </p>
         ) : (
           <>
-            {/* Innings selector cards */}
             <div
               style={{
                 display: "flex",
@@ -335,9 +347,11 @@ export default function UserMatchDetailsPage() {
                   >
                     Innings {inn.innings_number} — {inn.batting_team_name}
                   </div>
+
                   <div style={{ fontSize: 26, fontWeight: 700 }}>
                     {inn.total_runs}/{inn.total_wickets}
                   </div>
+
                   <div
                     style={{
                       fontSize: 13,
@@ -351,7 +365,6 @@ export default function UserMatchDetailsPage() {
               ))}
             </div>
 
-            {/* Batting table */}
             {currentInnings && (
               <div
                 style={{
@@ -362,7 +375,6 @@ export default function UserMatchDetailsPage() {
                   overflow: "hidden",
                 }}
               >
-                {/* Batting header */}
                 <div
                   style={{
                     padding: "12px 20px",
@@ -378,6 +390,7 @@ export default function UserMatchDetailsPage() {
                   <span style={{ fontWeight: 600, fontSize: 14 }}>
                     Batting — {currentInnings.batting_team_name}
                   </span>
+
                   <span style={{ fontSize: 18, fontWeight: 700 }}>
                     {currentInnings.total_runs}/{currentInnings.total_wickets}
                     <span
@@ -423,9 +436,11 @@ export default function UserMatchDetailsPage() {
                           )}
                         </tr>
                       </thead>
+
                       <tbody>
                         {batRows.map((b) => {
                           const dnb = b.dismissal_type === "did not bat";
+
                           return (
                             <tr
                               key={b.id || `${b.innings_id}-${b.player_id}`}
@@ -443,6 +458,7 @@ export default function UserMatchDetailsPage() {
                               >
                                 {b.player_name}
                               </td>
+
                               <td
                                 style={{
                                   ...tdS,
@@ -453,6 +469,7 @@ export default function UserMatchDetailsPage() {
                               >
                                 {getDismissalText(b)}
                               </td>
+
                               <td
                                 style={{
                                   ...tdS,
@@ -463,6 +480,7 @@ export default function UserMatchDetailsPage() {
                               >
                                 {dnb ? "-" : b.runs}
                               </td>
+
                               <td
                                 style={{
                                   ...tdS,
@@ -471,6 +489,7 @@ export default function UserMatchDetailsPage() {
                               >
                                 {dnb ? "-" : b.balls}
                               </td>
+
                               <td
                                 style={{
                                   ...tdS,
@@ -479,6 +498,7 @@ export default function UserMatchDetailsPage() {
                               >
                                 {dnb ? "-" : b.fours}
                               </td>
+
                               <td
                                 style={{
                                   ...tdS,
@@ -487,6 +507,7 @@ export default function UserMatchDetailsPage() {
                               >
                                 {dnb ? "-" : b.sixes}
                               </td>
+
                               <td
                                 style={{
                                   ...tdS,
@@ -500,7 +521,6 @@ export default function UserMatchDetailsPage() {
                           );
                         })}
 
-                        {/* Extras row */}
                         <tr style={{ background: "#111" }}>
                           <td
                             style={{
@@ -512,20 +532,13 @@ export default function UserMatchDetailsPage() {
                           >
                             Extras
                           </td>
-                          <td
-                            style={{ ...tdS, color: "#888" }}
-                            colSpan={5}
-                          >
+                          <td style={{ ...tdS, color: "#888" }} colSpan={5}>
                             {currentInnings.extras || 0}
                           </td>
                         </tr>
 
-                        {/* Total row */}
                         <tr style={{ background: "#1e1e1e" }}>
-                          <td
-                            style={{ ...tdS, fontWeight: 700 }}
-                            colSpan={2}
-                          >
+                          <td style={{ ...tdS, fontWeight: 700 }} colSpan={2}>
                             Total
                           </td>
                           <td
@@ -536,8 +549,7 @@ export default function UserMatchDetailsPage() {
                             }}
                             colSpan={5}
                           >
-                            {currentInnings.total_runs}/
-                            {currentInnings.total_wickets}
+                            {currentInnings.total_runs}/{currentInnings.total_wickets}
                             <span
                               style={{
                                 color: "#888",
@@ -557,7 +569,6 @@ export default function UserMatchDetailsPage() {
               </div>
             )}
 
-            {/* Bowling table */}
             {bowlRows.length > 0 && (
               <div
                 style={{
@@ -598,32 +609,22 @@ export default function UserMatchDetailsPage() {
                         )}
                       </tr>
                     </thead>
+
                     <tbody>
                       {bowlRows.map((b) => (
-                        <tr
-                          key={b.id || `${b.innings_id}-${b.player_id}`}
-                        >
-                          <td
-                            style={{
-                              ...tdS,
-                              fontWeight: 600,
-                            }}
-                          >
+                        <tr key={b.id || `${b.innings_id}-${b.player_id}`}>
+                          <td style={{ ...tdS, fontWeight: 600 }}>
                             {b.player_name}
                           </td>
                           <td style={tdS}>{b.overs}</td>
-                          <td style={{ ...tdS, color: "#888" }}>
-                            {b.maidens}
-                          </td>
+                          <td style={{ ...tdS, color: "#888" }}>{b.maidens}</td>
                           <td style={tdS}>{b.runs_conceded}</td>
                           <td
                             style={{
                               ...tdS,
                               fontWeight: 700,
                               color:
-                                parseInt(b.wickets, 10) > 0
-                                  ? "#d85a30"
-                                  : "#fff",
+                                parseInt(b.wickets, 10) > 0 ? "#d85a30" : "#fff",
                             }}
                           >
                             {b.wickets}
@@ -631,9 +632,7 @@ export default function UserMatchDetailsPage() {
                           <td style={{ ...tdS, color: "#888" }}>
                             {calcEco(b.runs_conceded, b.overs)}
                           </td>
-                          <td style={{ ...tdS, color: "#888" }}>
-                            {b.wides}
-                          </td>
+                          <td style={{ ...tdS, color: "#888" }}>{b.wides}</td>
                           <td style={{ ...tdS, color: "#888" }}>
                             {b.no_balls}
                           </td>

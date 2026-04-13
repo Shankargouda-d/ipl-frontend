@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import http from "../api/http";
+import http from "../../api/http";
 
 function Navbar() {
   return (
@@ -24,7 +24,7 @@ function Navbar() {
           fontSize: 18,
         }}
       >
-        IPL
+        🏏 IPL
       </Link>
 
       {[
@@ -70,13 +70,13 @@ const tdS = {
 };
 
 function calcSR(runs, balls) {
-  if (!balls || Number(balls) === 0) return "-";
-  return ((Number(runs) / Number(balls)) * 100).toFixed(2);
+  if (!balls || parseInt(balls, 10) === 0) return "-";
+  return ((parseInt(runs, 10) / parseInt(balls, 10)) * 100).toFixed(2);
 }
 
 function calcEco(runs, overs) {
-  if (!overs || Number(overs) === 0) return "-";
-  return (Number(runs) / Number(overs)).toFixed(2);
+  if (!overs || parseFloat(overs) === 0) return "-";
+  return (parseInt(runs, 10) / parseFloat(overs)).toFixed(2);
 }
 
 function getDismissalText(b) {
@@ -145,7 +145,7 @@ function getDismissalText(b) {
   if (b.dismissal_type === "hit wicket") {
     return (
       <span>
-        hit wicket b <strong>{b.wicket_taker_name || ""}</strong>
+        hit wkt b <strong>{b.wicket_taker_name || ""}</strong>
       </span>
     );
   }
@@ -172,14 +172,12 @@ export default function UserMatchDetailsPage() {
 
   useEffect(() => {
     loadAll();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const loadAll = async () => {
     setLoading(true);
 
     try {
-      // match + innings
       const [mr, ir] = await Promise.all([
         http.get(`/matches/${id}`),
         http.get(`/innings/match/${id}`),
@@ -191,7 +189,6 @@ export default function UserMatchDetailsPage() {
       const batMap = {};
       const bowlMap = {};
 
-      // for each innings, fetch batting + bowling
       await Promise.all(
         (ir.data || []).map(async (inn) => {
           try {
@@ -255,12 +252,8 @@ export default function UserMatchDetailsPage() {
   }
 
   const currentInnings = innings[activeInnings];
-  const batRows = currentInnings
-    ? batting[currentInnings.innings_id] || []
-    : [];
-  const bowlRows = currentInnings
-    ? bowling[currentInnings.innings_id] || []
-    : [];
+  const batRows = currentInnings ? batting[currentInnings.innings_id] || [] : [];
+  const bowlRows = currentInnings ? bowling[currentInnings.innings_id] || [] : [];
 
   return (
     <div style={{ minHeight: "100vh", background: "#0a0a0a", color: "#fff" }}>
@@ -274,23 +267,26 @@ export default function UserMatchDetailsPage() {
           ← All Matches
         </Link>
 
-        {/* Match header */}
         <div style={{ textAlign: "center", margin: "24px 0 32px" }}>
           <div style={{ color: "#888", fontSize: 13, marginBottom: 6 }}>
-            Match #{match.matchnumber || match.match_number || id}
+            Match #{match.match_number}
           </div>
 
           <h1 style={{ fontSize: 24, margin: "0 0 8px" }}>
-            {match.team1name || match.team1_name} vs{" "}
-            {match.team2name || match.team2_name}
+            {match.team1_name} vs {match.team2_name}
           </h1>
 
-          <p style={{ color: "#888", margin: "0 0 4px", fontSize: 14 }}>
-            {new Date(match.matchdate || match.match_date).toDateString()} ·{" "}
-            {match.venue}
+          <p
+            style={{
+              color: "#888",
+              margin: "0 0 4px",
+              fontSize: 14,
+            }}
+          >
+            {new Date(match.match_date).toDateString()} · {match.venue}
           </p>
 
-          {(match.resulttext || match.result_text) && (
+          {match.result_text && (
             <p
               style={{
                 color: "#639922",
@@ -299,28 +295,25 @@ export default function UserMatchDetailsPage() {
                 fontSize: 15,
               }}
             >
-              {match.resulttext || match.result_text}
+              {match.result_text}
             </p>
           )}
 
-          {(match.potmname || match.potm_name) && (
+          {match.potm_name && (
             <p style={{ color: "#EF9F27", fontSize: 14, marginTop: 4 }}>
-              Player of the Match:{" "}
-              <strong>{match.potmname || match.potm_name}</strong>
+              🏅 Player of the Match: <strong>{match.potm_name}</strong>
             </p>
           )}
         </div>
 
-        {/* No innings */}
         {innings.length === 0 ? (
           <p style={{ color: "#555", textAlign: "center", marginTop: 32 }}>
-            {(match.status || "").toLowerCase() === "scheduled"
+            {match.status === "scheduled"
               ? "Match hasn't started yet."
               : "No scorecard available yet."}
           </p>
         ) : (
           <>
-            {/* Innings selector cards */}
             <div
               style={{
                 display: "flex",
@@ -372,7 +365,6 @@ export default function UserMatchDetailsPage() {
               ))}
             </div>
 
-            {/* Batting table */}
             {currentInnings && (
               <div
                 style={{
@@ -435,19 +427,13 @@ export default function UserMatchDetailsPage() {
                     >
                       <thead>
                         <tr style={{ background: "#111" }}>
-                          {[
-                            "Batsman",
-                            "Dismissal",
-                            "R",
-                            "B",
-                            "4s",
-                            "6s",
-                            "SR",
-                          ].map((h) => (
-                            <th key={h} style={thS}>
-                              {h}
-                            </th>
-                          ))}
+                          {["Batsman", "Dismissal", "R", "B", "4s", "6s", "SR"].map(
+                            (h) => (
+                              <th key={h} style={thS}>
+                                {h}
+                              </th>
+                            )
+                          )}
                         </tr>
                       </thead>
 
@@ -546,27 +532,24 @@ export default function UserMatchDetailsPage() {
                           >
                             Extras
                           </td>
-                          <td
-                            style={{ ...tdS, color: "#888" }}
-                            colSpan={5}
-                          >
+                          <td style={{ ...tdS, color: "#888" }} colSpan={5}>
                             {currentInnings.extras || 0}
                           </td>
                         </tr>
 
                         <tr style={{ background: "#1e1e1e" }}>
-                          <td
-                            style={{ ...tdS, fontWeight: 700 }}
-                            colSpan={2}
-                          >
+                          <td style={{ ...tdS, fontWeight: 700 }} colSpan={2}>
                             Total
                           </td>
                           <td
-                            style={{ ...tdS, fontWeight: 700, fontSize: 15 }}
+                            style={{
+                              ...tdS,
+                              fontWeight: 700,
+                              fontSize: 15,
+                            }}
                             colSpan={5}
                           >
-                            {currentInnings.total_runs}/
-                            {currentInnings.total_wickets}
+                            {currentInnings.total_runs}/{currentInnings.total_wickets}
                             <span
                               style={{
                                 color: "#888",
@@ -586,8 +569,7 @@ export default function UserMatchDetailsPage() {
               </div>
             )}
 
-            {/* Bowling table */}
-            {bowlRows.length > 0 && currentInnings && (
+            {bowlRows.length > 0 && (
               <div
                 style={{
                   background: "#1a1a1a",
@@ -618,47 +600,31 @@ export default function UserMatchDetailsPage() {
                   >
                     <thead>
                       <tr style={{ background: "#111" }}>
-                        {[
-                          "Bowler",
-                          "O",
-                          "M",
-                          "R",
-                          "W",
-                          "Eco",
-                          "Wd",
-                          "NB",
-                        ].map((h) => (
-                          <th key={h} style={thS}>
-                            {h}
-                          </th>
-                        ))}
+                        {["Bowler", "O", "M", "R", "W", "Eco", "Wd", "NB"].map(
+                          (h) => (
+                            <th key={h} style={thS}>
+                              {h}
+                            </th>
+                          )
+                        )}
                       </tr>
                     </thead>
 
                     <tbody>
                       {bowlRows.map((b) => (
-                        <tr
-                          key={b.id || `${b.innings_id}-${b.player_id}`}
-                        >
-                          <td
-                            style={{
-                              ...tdS,
-                              fontWeight: 600,
-                            }}
-                          >
+                        <tr key={b.id || `${b.innings_id}-${b.player_id}`}>
+                          <td style={{ ...tdS, fontWeight: 600 }}>
                             {b.player_name}
                           </td>
                           <td style={tdS}>{b.overs}</td>
-                          <td style={{ ...tdS, color: "#888" }}>
-                            {b.maidens}
-                          </td>
+                          <td style={{ ...tdS, color: "#888" }}>{b.maidens}</td>
                           <td style={tdS}>{b.runs_conceded}</td>
                           <td
                             style={{
                               ...tdS,
                               fontWeight: 700,
                               color:
-                                Number(b.wickets) > 0 ? "#d85a30" : "#fff",
+                                parseInt(b.wickets, 10) > 0 ? "#d85a30" : "#fff",
                             }}
                           >
                             {b.wickets}
@@ -666,9 +632,7 @@ export default function UserMatchDetailsPage() {
                           <td style={{ ...tdS, color: "#888" }}>
                             {calcEco(b.runs_conceded, b.overs)}
                           </td>
-                          <td style={{ ...tdS, color: "#888" }}>
-                            {b.wides}
-                          </td>
+                          <td style={{ ...tdS, color: "#888" }}>{b.wides}</td>
                           <td style={{ ...tdS, color: "#888" }}>
                             {b.no_balls}
                           </td>

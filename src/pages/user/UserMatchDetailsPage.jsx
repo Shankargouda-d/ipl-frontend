@@ -4,15 +4,17 @@ import http from "../../api/http";
 
 function Navbar() {
   return (
-    <nav style={{
-      background: "#111",
-      borderBottom: "1px solid #1a1a1a",
-      padding: "14px 24px",
-      display: "flex",
-      gap: 24,
-      alignItems: "center",
-      flexWrap: "wrap",
-    }}>
+    <nav
+      style={{
+        background: "#111",
+        borderBottom: "1px solid #1a1a1a",
+        padding: "14px 24px",
+        display: "flex",
+        gap: 24,
+        alignItems: "center",
+        flexWrap: "wrap",
+      }}
+    >
       <Link
         to="/"
         style={{
@@ -56,6 +58,7 @@ const thS = {
   borderBottom: "1px solid #2a2a2a",
   whiteSpace: "nowrap",
 };
+
 const tdS = {
   padding: "10px 14px",
   borderBottom: "1px solid #111",
@@ -63,37 +66,88 @@ const tdS = {
 };
 
 function calcSR(runs, balls) {
-  if (!balls || parseInt(balls) === 0) return "0.00";
+  if (!balls || parseInt(balls) === 0) return "-";
   return ((parseInt(runs) / parseInt(balls)) * 100).toFixed(2);
 }
 
 function calcEco(runs, overs) {
-  if (!overs || parseFloat(overs) === 0) return "0.00";
+  if (!overs || parseFloat(overs) === 0) return "-";
   return (parseInt(runs) / parseFloat(overs)).toFixed(2);
 }
 
-// UPDATED: now also handles "did not bat"
 function getDismissalText(b) {
-  if (b.dismissal_type === "did not bat") return "did not bat";
-  if (b.dismissal_type === "not out") return "not out";
-  if (b.dismissal_type === "bowled") return `b ${b.wicket_taker_name || ""}`;
-  if (b.dismissal_type === "lbw") return `lbw b ${b.wicket_taker_name || ""}`;
+  if (!b.dismissal_type || b.dismissal_type === "not out") {
+    return (
+      <span style={{ color: "#639922", fontWeight: 500 }}>not out</span>
+    );
+  }
+  if (b.dismissal_type === "did not bat") {
+    return <span style={{ color: "#555" }}>did not bat</span>;
+  }
+  if (b.dismissal_type === "bowled") {
+    return (
+      <span>
+        b <strong>{b.wicket_taker_name || ""}</strong>
+      </span>
+    );
+  }
+  if (b.dismissal_type === "lbw") {
+    return (
+      <span>
+        lbw b <strong>{b.wicket_taker_name || ""}</strong>
+      </span>
+    );
+  }
   if (b.dismissal_type === "caught") {
-    if (b.fielder_name && b.wicket_taker_name) {
-      return `c ${b.fielder_name} b ${b.wicket_taker_name}`;
+    if (
+      b.fielder_name &&
+      b.wicket_taker_name &&
+      b.fielder_name !== b.wicket_taker_name
+    ) {
+      return (
+        <span>
+          c <strong>{b.fielder_name}</strong> b{" "}
+          <strong>{b.wicket_taker_name}</strong>
+        </span>
+      );
     }
-    return `c & b ${b.wicket_taker_name || ""}`;
+    return (
+      <span>
+        c &amp; b <strong>{b.wicket_taker_name || ""}</strong>
+      </span>
+    );
   }
   if (b.dismissal_type === "stumped") {
-    return `st ${b.fielder_name || ""} b ${b.wicket_taker_name || ""}`;
+    return (
+      <span>
+        st <strong>{b.fielder_name || ""}</strong> b{" "}
+        <strong>{b.wicket_taker_name || ""}</strong>
+      </span>
+    );
   }
   if (b.dismissal_type === "run out") {
-    return `run out (${b.fielder_name || ""})`;
+    return (
+      <span>
+        run out{" "}
+        {b.fielder_name ? <strong>({b.fielder_name})</strong> : ""}
+      </span>
+    );
   }
   if (b.dismissal_type === "hit wicket") {
-    return `hit wicket b ${b.wicket_taker_name || ""}`;
+    return (
+      <span>
+        hit wkt b <strong>{b.wicket_taker_name || ""}</strong>
+      </span>
+    );
   }
-  return b.dismissal_type;
+  return <span style={{ color: "#888" }}>{b.dismissal_type}</span>;
+}
+
+function oversDisplay(inn) {
+  if (inn.total_wickets >= 10) {
+    return `All out · ${inn.overs} ov`;
+  }
+  return `${inn.overs} ov`;
 }
 
 export default function UserMatchDetailsPage() {
@@ -107,29 +161,39 @@ export default function UserMatchDetailsPage() {
 
   useEffect(() => {
     loadAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const loadAll = async () => {
     try {
+      // 1) Load match and innings
+      // NOTE: using /innings/match/:matchId to match backend router
       const [mr, ir] = await Promise.all([
         http.get(`/matches/${id}`),
-        http.get(`/innings/${id}`),
+        http.get(`/innings/match/${id}`),
       ]);
 
       setMatch(mr.data);
-      setInnings(ir.data);
+      setInnings(ir.data || []);
 
       const batMap = {};
       const bowlMap = {};
 
+      // 2) Load batting & bowling for each innings
       await Promise.all(
-        ir.data.map(async (inn) => {
-          const [batRes, bowlRes] = await Promise.all([
-            http.get(`/innings/${inn.innings_id}/batting`),
-            http.get(`/innings/${inn.innings_id}/bowling`),
-          ]);
-          batMap[inn.innings_id] = batRes.data;
-          bowlMap[inn.innings_id] = bowlRes.data;
+        (ir.data || []).map(async (inn) => {
+          try {
+            const [batRes, bowlRes] = await Promise.all([
+              http.get(`/innings/${inn.innings_id}/batting`),
+              http.get(`/innings/${inn.innings_id}/bowling`),
+            ]);
+            batMap[inn.innings_id] = batRes.data || [];
+            bowlMap[inn.innings_id] = bowlRes.data || [];
+          } catch (e) {
+            console.error(`Error loading innings ${inn.innings_id}:`, e);
+            batMap[inn.innings_id] = [];
+            bowlMap[inn.innings_id] = [];
+          }
         })
       );
 
@@ -198,7 +262,7 @@ export default function UserMatchDetailsPage() {
           <div style={{ color: "#888", fontSize: 13, marginBottom: 6 }}>
             Match #{match.match_number}
           </div>
-          <h1 style={{ fontSize: 26, margin: "0 0 8px" }}>
+          <h1 style={{ fontSize: 24, margin: "0 0 8px" }}>
             {match.team1_name} vs {match.team2_name}
           </h1>
           <p
@@ -233,16 +297,16 @@ export default function UserMatchDetailsPage() {
           <p style={{ color: "#555", textAlign: "center", marginTop: 32 }}>
             {match.status === "scheduled"
               ? "Match hasn't started yet."
-              : "No scorecard available."}
+              : "No scorecard available yet."}
           </p>
         ) : (
           <>
-            {/* Innings cards */}
+            {/* Innings selector cards */}
             <div
               style={{
                 display: "flex",
                 gap: 12,
-                marginBottom: 24,
+                marginBottom: 28,
                 flexWrap: "wrap",
               }}
             >
@@ -251,8 +315,7 @@ export default function UserMatchDetailsPage() {
                   key={inn.innings_id}
                   onClick={() => setActiveInnings(idx)}
                   style={{
-                    background:
-                      activeInnings === idx ? "#d85a30" : "#1a1a1a",
+                    background: activeInnings === idx ? "#d85a30" : "#1a1a1a",
                     border: `1px solid ${
                       activeInnings === idx ? "#d85a30" : "#2a2a2a"
                     }`,
@@ -266,32 +329,29 @@ export default function UserMatchDetailsPage() {
                   <div
                     style={{
                       fontSize: 12,
-                      color:
-                        activeInnings === idx ? "#ffe0d0" : "#888",
+                      color: activeInnings === idx ? "#ffe0d0" : "#888",
                       marginBottom: 6,
                     }}
                   >
-                    Innings {inn.innings_number} —{" "}
-                    {inn.batting_team_name || ""}
+                    Innings {inn.innings_number} — {inn.batting_team_name}
                   </div>
-                  <div style={{ fontSize: 24, fontWeight: 700 }}>
+                  <div style={{ fontSize: 26, fontWeight: 700 }}>
                     {inn.total_runs}/{inn.total_wickets}
                   </div>
                   <div
                     style={{
                       fontSize: 13,
-                      color:
-                        activeInnings === idx ? "#ffe0d0" : "#888",
+                      color: activeInnings === idx ? "#ffe0d0" : "#888",
                       marginTop: 4,
                     }}
                   >
-                    {inn.overs} overs · Extras: {inn.extras || 0}
+                    {oversDisplay(inn)} · Extras: {inn.extras || 0}
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Batting scorecard */}
+            {/* Batting table */}
             {currentInnings && (
               <div
                 style={{
@@ -305,26 +365,21 @@ export default function UserMatchDetailsPage() {
                 {/* Batting header */}
                 <div
                   style={{
-                    padding: "12px 16px",
+                    padding: "12px 20px",
                     background: "#222",
                     borderBottom: "1px solid #2a2a2a",
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: 8,
                   }}
                 >
-                  <span
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 14,
-                      color: "#fff",
-                    }}
-                  >
+                  <span style={{ fontWeight: 600, fontSize: 14 }}>
                     Batting — {currentInnings.batting_team_name}
                   </span>
                   <span style={{ fontSize: 18, fontWeight: 700 }}>
-                    {currentInnings.total_runs}/
-                    {currentInnings.total_wickets}
+                    {currentInnings.total_runs}/{currentInnings.total_wickets}
                     <span
                       style={{
                         fontSize: 13,
@@ -333,181 +388,176 @@ export default function UserMatchDetailsPage() {
                         marginLeft: 8,
                       }}
                     >
-                      ({currentInnings.overs} ov)
+                      ({oversDisplay(currentInnings)})
                     </span>
                   </span>
                 </div>
 
-                <div style={{ overflowX: "auto" }}>
-                  <table
+                {batRows.length === 0 ? (
+                  <p
                     style={{
-                      width: "100%",
-                      borderCollapse: "collapse",
-                      fontSize: 13,
+                      padding: 20,
+                      color: "#555",
+                      textAlign: "center",
                     }}
                   >
-                    <thead>
-                      <tr style={{ background: "#111" }}>
-                        {[
-                          "Batsman",
-                          "Dismissal",
-                          "R",
-                          "B",
-                          "4s",
-                          "6s",
-                          "SR",
-                        ].map((h) => (
-                          <th key={h} style={thS}>
-                            {h}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {batRows.map((b) => {
-                        const isNotOut =
-                          b.dismissal_type === "not out";
-                        const isDNB =
-                          b.dismissal_type === "did not bat";
+                    Batting data not available yet.
+                  </p>
+                ) : (
+                  <div style={{ overflowX: "auto" }}>
+                    <table
+                      style={{
+                        width: "100%",
+                        borderCollapse: "collapse",
+                        fontSize: 13,
+                      }}
+                    >
+                      <thead>
+                        <tr style={{ background: "#111" }}>
+                          {["Batsman", "Dismissal", "R", "B", "4s", "6s", "SR"].map(
+                            (h) => (
+                              <th key={h} style={thS}>
+                                {h}
+                              </th>
+                            )
+                          )}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {batRows.map((b) => {
+                          const dnb = b.dismissal_type === "did not bat";
+                          return (
+                            <tr
+                              key={b.id || `${b.innings_id}-${b.player_id}`}
+                              style={{
+                                background: dnb ? "#0d0d0d" : "transparent",
+                                opacity: dnb ? 0.5 : 1,
+                              }}
+                            >
+                              <td
+                                style={{
+                                  ...tdS,
+                                  fontWeight: dnb ? 400 : 600,
+                                  color: dnb ? "#555" : "#fff",
+                                }}
+                              >
+                                {b.player_name}
+                              </td>
+                              <td
+                                style={{
+                                  ...tdS,
+                                  color: "#888",
+                                  fontSize: 12,
+                                  maxWidth: 220,
+                                }}
+                              >
+                                {getDismissalText(b)}
+                              </td>
+                              <td
+                                style={{
+                                  ...tdS,
+                                  fontWeight: 700,
+                                  fontSize: dnb ? 13 : 15,
+                                  color: dnb ? "#555" : "#fff",
+                                }}
+                              >
+                                {dnb ? "-" : b.runs}
+                              </td>
+                              <td
+                                style={{
+                                  ...tdS,
+                                  color: dnb ? "#555" : "#aaa",
+                                }}
+                              >
+                                {dnb ? "-" : b.balls}
+                              </td>
+                              <td
+                                style={{
+                                  ...tdS,
+                                  color: dnb ? "#555" : "#aaa",
+                                }}
+                              >
+                                {dnb ? "-" : b.fours}
+                              </td>
+                              <td
+                                style={{
+                                  ...tdS,
+                                  color: dnb ? "#555" : "#aaa",
+                                }}
+                              >
+                                {dnb ? "-" : b.sixes}
+                              </td>
+                              <td
+                                style={{
+                                  ...tdS,
+                                  color: "#888",
+                                  fontSize: 12,
+                                }}
+                              >
+                                {dnb ? "-" : calcSR(b.runs, b.balls)}
+                              </td>
+                            </tr>
+                          );
+                        })}
 
-                        return (
-                          <tr
-                            key={b.id || `${b.innings_id}-${b.player_id}`}
+                        {/* Extras row */}
+                        <tr style={{ background: "#111" }}>
+                          <td
                             style={{
-                              background: isNotOut
-                                ? "#0f1a0f"
-                                : "transparent",
-                              opacity: isDNB ? 0.7 : 1,
-                            }}
-                          >
-                            <td
-                              style={{
-                                ...tdS,
-                                fontWeight: 600,
-                                color: "#fff",
-                              }}
-                            >
-                              {b.player_name}
-                            </td>
-                            <td
-                              style={{
-                                ...tdS,
-                                color: "#888",
-                                fontSize: 12,
-                                maxWidth: 220,
-                              }}
-                            >
-                              {isNotOut ? (
-                                <span
-                                  style={{
-                                    color: "#639922",
-                                    fontWeight: 500,
-                                  }}
-                                >
-                                  not out
-                                </span>
-                              ) : isDNB ? (
-                                <span style={{ color: "#666" }}>
-                                  did not bat
-                                </span>
-                              ) : (
-                                <span>{getDismissalText(b)}</span>
-                              )}
-                            </td>
-                            <td
-                              style={{
-                                ...tdS,
-                                fontWeight: 700,
-                                fontSize: 15,
-                              }}
-                            >
-                              {b.runs}
-                            </td>
-                            <td
-                              style={{ ...tdS, color: "#aaa" }}
-                            >
-                              {b.balls}
-                            </td>
-                            <td
-                              style={{ ...tdS, color: "#aaa" }}
-                            >
-                              {b.fours}
-                            </td>
-                            <td
-                              style={{ ...tdS, color: "#aaa" }}
-                            >
-                              {b.sixes}
-                            </td>
-                            <td
-                              style={{
-                                ...tdS,
-                                color: "#888",
-                                fontSize: 12,
-                              }}
-                            >
-                              {calcSR(b.runs, b.balls)}
-                            </td>
-                          </tr>
-                        );
-                      })}
-
-                      {/* Extras row */}
-                      <tr style={{ background: "#111" }}>
-                        <td
-                          style={{
-                            ...tdS,
-                            color: "#888",
-                            fontStyle: "italic",
-                          }}
-                          colSpan={2}
-                        >
-                          Extras
-                        </td>
-                        <td
-                          style={{ ...tdS, color: "#888" }}
-                          colSpan={5}
-                        >
-                          {currentInnings.extras || 0}
-                        </td>
-                      </tr>
-
-                      {/* Total row */}
-                      <tr style={{ background: "#1e1e1e" }}>
-                        <td
-                          style={{ ...tdS, fontWeight: 700 }}
-                          colSpan={2}
-                        >
-                          Total
-                        </td>
-                        <td
-                          style={{
-                            ...tdS,
-                            fontWeight: 700,
-                            fontSize: 15,
-                          }}
-                          colSpan={5}
-                        >
-                          {currentInnings.total_runs}/
-                          {currentInnings.total_wickets}
-                          <span
-                            style={{
+                              ...tdS,
                               color: "#888",
-                              fontWeight: 400,
-                              fontSize: 12,
-                              marginLeft: 8,
+                              fontStyle: "italic",
                             }}
+                            colSpan={2}
                           >
-                            ({currentInnings.overs} ov)
-                          </span>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+                            Extras
+                          </td>
+                          <td
+                            style={{ ...tdS, color: "#888" }}
+                            colSpan={5}
+                          >
+                            {currentInnings.extras || 0}
+                          </td>
+                        </tr>
+
+                        {/* Total row */}
+                        <tr style={{ background: "#1e1e1e" }}>
+                          <td
+                            style={{ ...tdS, fontWeight: 700 }}
+                            colSpan={2}
+                          >
+                            Total
+                          </td>
+                          <td
+                            style={{
+                              ...tdS,
+                              fontWeight: 700,
+                              fontSize: 15,
+                            }}
+                            colSpan={5}
+                          >
+                            {currentInnings.total_runs}/
+                            {currentInnings.total_wickets}
+                            <span
+                              style={{
+                                color: "#888",
+                                fontWeight: 400,
+                                fontSize: 12,
+                                marginLeft: 8,
+                              }}
+                            >
+                              ({oversDisplay(currentInnings)})
+                            </span>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Bowling scorecard */}
+            {/* Bowling table */}
             {bowlRows.length > 0 && (
               <div
                 style={{
@@ -519,19 +569,13 @@ export default function UserMatchDetailsPage() {
               >
                 <div
                   style={{
-                    padding: "12px 16px",
+                    padding: "12px 20px",
                     background: "#222",
                     borderBottom: "1px solid #2a2a2a",
                   }}
                 >
-                  <span
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 14,
-                      color: "#fff",
-                    }}
-                  >
-                    Bowling — {currentInnings.bowling_team_name || ""}
+                  <span style={{ fontWeight: 600, fontSize: 14 }}>
+                    Bowling — {currentInnings.bowling_team_name}
                   </span>
                 </div>
 
@@ -545,20 +589,13 @@ export default function UserMatchDetailsPage() {
                   >
                     <thead>
                       <tr style={{ background: "#111" }}>
-                        {[
-                          "Bowler",
-                          "O",
-                          "M",
-                          "R",
-                          "W",
-                          "Eco",
-                          "Wd",
-                          "NB",
-                        ].map((h) => (
-                          <th key={h} style={thS}>
-                            {h}
-                          </th>
-                        ))}
+                        {["Bowler", "O", "M", "R", "W", "Eco", "Wd", "NB"].map(
+                          (h) => (
+                            <th key={h} style={thS}>
+                              {h}
+                            </th>
+                          )
+                        )}
                       </tr>
                     </thead>
                     <tbody>
@@ -567,14 +604,15 @@ export default function UserMatchDetailsPage() {
                           key={b.id || `${b.innings_id}-${b.player_id}`}
                         >
                           <td
-                            style={{ ...tdS, fontWeight: 600 }}
+                            style={{
+                              ...tdS,
+                              fontWeight: 600,
+                            }}
                           >
                             {b.player_name}
                           </td>
                           <td style={tdS}>{b.overs}</td>
-                          <td
-                            style={{ ...tdS, color: "#888" }}
-                          >
+                          <td style={{ ...tdS, color: "#888" }}>
                             {b.maidens}
                           </td>
                           <td style={tdS}>{b.runs_conceded}</td>
@@ -583,26 +621,20 @@ export default function UserMatchDetailsPage() {
                               ...tdS,
                               fontWeight: 700,
                               color:
-                                parseInt(b.wickets) > 0
+                                parseInt(b.wickets, 10) > 0
                                   ? "#d85a30"
                                   : "#fff",
                             }}
                           >
                             {b.wickets}
                           </td>
-                          <td
-                            style={{ ...tdS, color: "#888" }}
-                          >
+                          <td style={{ ...tdS, color: "#888" }}>
                             {calcEco(b.runs_conceded, b.overs)}
                           </td>
-                          <td
-                            style={{ ...tdS, color: "#888" }}
-                          >
+                          <td style={{ ...tdS, color: "#888" }}>
                             {b.wides}
                           </td>
-                          <td
-                            style={{ ...tdS, color: "#888" }}
-                          >
+                          <td style={{ ...tdS, color: "#888" }}>
                             {b.no_balls}
                           </td>
                         </tr>

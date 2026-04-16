@@ -253,47 +253,117 @@ function BowlingTable({ rows, setRows, onSave, saving }) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((r, i) => (
-              <tr key={r.player_id} style={{ borderBottom: "1px solid #1a1a1a" }}>
-                <td style={{ padding: "8px 12px" }}>{r.player_name}</td>
+  {rows.map((r, i) => (
+    <tr key={r.player_id} style={{ borderBottom: "1px solid #1a1a1a" }}>
+      <td style={{ padding: "8px 12px" }}>{r.player_name}</td>
 
-                {/* Overs with auto fix */}
-                <td style={{ padding: "8px 12px" }}>
-                  <input
-                    type="number" min="0" max="4" step="0.1"
-                    value={r.overs}
-                    onChange={(e) => {
-                      const fixed = fixOvers(e.target.value);
-                      setRows((prev) => prev.map((row, idx) =>
-                        idx === i ? { ...row, overs: fixed } : row
-                      ));
-                    }}
-                    style={{ ...ci, width: 60, textAlign: "center" }}
-                  />
-                </td>
+      {/* Overs */}
+      <td style={{ padding: "8px 12px" }}>
+        <input
+          type="number"
+          min="0"
+          max="4"
+          step="0.1"
+          value={r.overs}
+          onChange={(e) => {
+            const fixed = fixOvers(e.target.value);
+            setRows((prev) =>
+              prev.map((row, idx) =>
+                idx === i ? { ...row, overs: fixed } : row
+              )
+            );
+          }}
+          style={{ ...ci, width: 60, textAlign: "center" }}
+        />
+      </td>
 
-                {/* Maidens, Runs, Wickets, Wides, NB */}
-                {["maidens", "runs_conceded", "wickets", "wides", "no_balls"].map((f) => (
-                  <td key={f} style={{ padding: "8px 12px" }}>
-                    <input
-                      type="number" min="0" step="1"
-                      value={r[f]}
-                      onChange={(e) => setRows((prev) => prev.map((row, idx) =>
-                        idx === i ? { ...row, [f]: e.target.value } : row
-                      ))}
-                      style={{ ...ci, width: 52, textAlign: "center" }}
-                    />
-                  </td>
-                ))}
+      {/* Maidens */}
+      <td style={{ padding: "8px 12px" }}>
+        <input
+          type="number"
+          value={r.maidens}
+          onChange={(e) =>
+            setRows((prev) =>
+              prev.map((row, idx) =>
+                idx === i ? { ...row, maidens: e.target.value } : row
+              )
+            )
+          }
+          style={{ ...ci, width: 52, textAlign: "center" }}
+        />
+      </td>
 
-                {/* Economy auto calculated */}
-                <td style={{ padding: "8px 12px", color: "#aaa", fontSize: 12,
-                  textAlign: "center" }}>
-                  {calcEco(r.runs_conceded, r.overs)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
+      {/* Runs conceded */}
+      <td style={{ padding: "8px 12px" }}>
+        <input
+          type="number"
+          value={r.runs_conceded}
+          onChange={(e) =>
+            setRows((prev) =>
+              prev.map((row, idx) =>
+                idx === i ? { ...row, runs_conceded: e.target.value } : row
+              )
+            )
+          }
+          style={{ ...ci, width: 52, textAlign: "center" }}
+        />
+      </td>
+
+      {/* Wickets */}
+      <td style={{ padding: "8px 12px" }}>
+        <input
+          type="number"
+          value={r.wickets}
+          onChange={(e) =>
+            setRows((prev) =>
+              prev.map((row, idx) =>
+                idx === i ? { ...row, wickets: e.target.value } : row
+              )
+            )
+          }
+          style={{ ...ci, width: 52, textAlign: "center" }}
+        />
+      </td>
+
+      {/* Economy (CORRECT POSITION) */}
+      <td style={{ padding: "8px 12px", textAlign: "center", color: "#aaa" }}>
+        {calcEco(r.runs_conceded, r.overs)}
+      </td>
+
+      {/* Wides */}
+      <td style={{ padding: "8px 12px" }}>
+        <input
+          type="number"
+          value={r.wides}
+          onChange={(e) =>
+            setRows((prev) =>
+              prev.map((row, idx) =>
+                idx === i ? { ...row, wides: e.target.value } : row
+              )
+            )
+          }
+          style={{ ...ci, width: 52, textAlign: "center" }}
+        />
+      </td>
+
+      {/* No Balls */}
+      <td style={{ padding: "8px 12px" }}>
+        <input
+          type="number"
+          value={r.no_balls}
+          onChange={(e) =>
+            setRows((prev) =>
+              prev.map((row, idx) =>
+                idx === i ? { ...row, no_balls: e.target.value } : row
+              )
+            )
+          }
+          style={{ ...ci, width: 52, textAlign: "center" }}
+        />
+      </td>
+    </tr>
+  ))}
+</tbody>
         </table>
       </div>
       <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>

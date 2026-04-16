@@ -201,7 +201,6 @@ export default function UserMatchDetailsPage() {
             batMap[inn.innings_id] = batRes?.data || [];
             bowlMap[inn.innings_id] = bowlRes?.data || [];
           } catch (e) {
-            console.error(`Error loading innings ${inn.innings_id}:`, e);
             batMap[inn.innings_id] = [];
             bowlMap[inn.innings_id] = [];
           }
@@ -254,25 +253,125 @@ export default function UserMatchDetailsPage() {
           ← All Matches
         </Link>
 
+        {/* HEADER */}
         <div style={{ textAlign: "center", margin: "24px 0 32px" }}>
           <h1>{match.team1_name} vs {match.team2_name}</h1>
+          <div style={{ color: "#aaa", fontSize: 13 }}>
+            {match.venue || "Unknown Venue"} •{" "}
+            {match.match_date
+              ? new Date(match.match_date).toLocaleDateString()
+              : ""}
+          </div>
+        </div>
+
+        {/* INNINGS TABS */}
+        <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
+          {innings.map((inn, index) => (
+            <button
+              key={inn.innings_id}
+              onClick={() => setActiveInnings(index)}
+              style={{
+                padding: "8px 16px",
+                borderRadius: 20,
+                border: "none",
+                cursor: "pointer",
+                background:
+                  activeInnings === index ? "#d85a30" : "#1a1a1a",
+                color: activeInnings === index ? "#fff" : "#aaa",
+              }}
+            >
+              {inn.team_name} Innings
+            </button>
+          ))}
         </div>
 
         {currentInnings && (
           <div>
-            <h2>Batting</h2>
-            {batRows.map((b) => (
-              <div key={b.id}>
-                {b.player_name} - {b.runs} ({b.balls})
-              </div>
-            ))}
+            {/* SCORE */}
+            <h3>
+              {currentInnings.team_name} - {currentInnings.total_runs}/
+              {currentInnings.total_wickets} (
+              {oversDisplay(currentInnings)})
+            </h3>
 
-            <h2>Bowling</h2>
-            {bowlRows.map((b) => (
-              <div key={b.id}>
-                {b.player_name} - {b.wickets}/{b.runs_conceded}
-              </div>
-            ))}
+            {/* BATTING TABLE */}
+            <h2>Batting</h2>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr>
+                  <th style={thS}>Batsman</th>
+                  <th style={thS}>R</th>
+                  <th style={thS}>B</th>
+                  <th style={thS}>4s</th>
+                  <th style={thS}>6s</th>
+                  <th style={thS}>SR</th>
+                </tr>
+              </thead>
+              <tbody>
+                {batRows.map((b) => (
+                  <tr key={b.id}>
+                    <td style={tdS}>
+                      <div>{b.player_name}</div>
+                      <div style={{ fontSize: 12, color: "#888" }}>
+                        {getDismissalText(b)}
+                      </div>
+                    </td>
+                    <td style={tdS}>{b.runs}</td>
+                    <td style={tdS}>{b.balls}</td>
+                    <td style={tdS}>{b.fours || 0}</td>
+                    <td style={tdS}>{b.sixes || 0}</td>
+                    <td style={tdS}>{calcSR(b.runs, b.balls)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* BOWLING TABLE */}
+            <h2 style={{ marginTop: 30 }}>Bowling</h2>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr>
+                  <th style={thS}>Bowler</th>
+                  <th style={thS}>O</th>
+                  <th style={thS}>R</th>
+                  <th style={thS}>W</th>
+                  <th style={thS}>Eco</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bowlRows.map((b) => (
+                  <tr key={b.id}>
+                    <td style={tdS}>{b.player_name}</td>
+                    <td style={tdS}>{b.overs}</td>
+                    <td style={tdS}>{b.runs_conceded}</td>
+                    <td style={tdS}>{b.wickets}</td>
+                    <td style={tdS}>
+                      {calcEco(b.runs_conceded, b.overs)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* PLAYER OF MATCH */}
+        {match.player_of_match && (
+          <div
+            style={{
+              marginTop: 40,
+              padding: 16,
+              background: "#111",
+              borderRadius: 10,
+              textAlign: "center",
+            }}
+          >
+            <h3 style={{ color: "#d85a30" }}>
+              Player of the Match
+            </h3>
+            <p style={{ fontSize: 18 }}>
+              {match.player_of_match}
+            </p>
           </div>
         )}
       </div>

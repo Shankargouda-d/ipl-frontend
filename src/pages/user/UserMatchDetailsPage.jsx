@@ -220,7 +220,9 @@ export default function UserMatchDetailsPage() {
 
   const batRows =
     currentInnings && batting[currentInnings.innings_id]
-      ? batting[currentInnings.innings_id]
+      ? [...batting[currentInnings.innings_id]].sort(
+          (a, b) => (parseInt(a.batting_order, 10) || 999) - (parseInt(b.batting_order, 10) || 999)
+        )
       : [];
 
   const bowlRows =
@@ -228,9 +230,26 @@ export default function UserMatchDetailsPage() {
       ? bowling[currentInnings.innings_id]
       : [];
 
+  const playedBatters = batRows.filter(
+    (b) => b.dismissal_type !== "did not bat"
+  );
+
+  const didNotBatRows = batRows.filter(
+    (b) => b.dismissal_type === "did not bat"
+  );
+
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", background: "#0a0a0a", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "#0a0a0a",
+          color: "#fff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         Loading scorecard...
       </div>
     );
@@ -238,7 +257,16 @@ export default function UserMatchDetailsPage() {
 
   if (!match) {
     return (
-      <div style={{ minHeight: "100vh", background: "#0a0a0a", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "#0a0a0a",
+          color: "#fff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         Match not found.
       </div>
     );
@@ -253,9 +281,10 @@ export default function UserMatchDetailsPage() {
           ← All Matches
         </Link>
 
-        {/* HEADER */}
         <div style={{ textAlign: "center", margin: "24px 0 32px" }}>
-          <h1>{match.team1_name} vs {match.team2_name}</h1>
+          <h1>
+            {match.team1_name} vs {match.team2_name}
+          </h1>
           <div style={{ color: "#aaa", fontSize: 13 }}>
             {match.venue || "Unknown Venue"} •{" "}
             {match.match_date
@@ -264,7 +293,6 @@ export default function UserMatchDetailsPage() {
           </div>
         </div>
 
-        {/* INNINGS TABS */}
         <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
           {innings.map((inn, index) => (
             <button
@@ -287,18 +315,16 @@ export default function UserMatchDetailsPage() {
 
         {currentInnings && (
           <div>
-            {/* SCORE */}
             <h3>
               {currentInnings.team_name} - {currentInnings.total_runs}/
-              {currentInnings.total_wickets} (
-              {oversDisplay(currentInnings)})
+              {currentInnings.total_wickets} ({oversDisplay(currentInnings)})
             </h3>
 
-            {/* BATTING TABLE */}
             <h2>Batting</h2>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr>
+                  <th style={thS}>Pos</th>
                   <th style={thS}>Batsman</th>
                   <th style={thS}>R</th>
                   <th style={thS}>B</th>
@@ -308,8 +334,9 @@ export default function UserMatchDetailsPage() {
                 </tr>
               </thead>
               <tbody>
-                {batRows.map((b) => (
-                  <tr key={b.id}>
+                {playedBatters.map((b, index) => (
+                  <tr key={b.id || b.player_id || index}>
+                    <td style={tdS}>{b.batting_order || "-"}</td>
                     <td style={tdS}>
                       <div>{b.player_name}</div>
                       <div style={{ fontSize: 12, color: "#888" }}>
@@ -326,7 +353,13 @@ export default function UserMatchDetailsPage() {
               </tbody>
             </table>
 
-            {/* BOWLING TABLE */}
+            {didNotBatRows.length > 0 && (
+              <div style={{ marginTop: 16, color: "#aaa", fontSize: 14 }}>
+                <strong style={{ color: "#fff" }}>Did not bat:</strong>{" "}
+                {didNotBatRows.map((p) => p.player_name).join(", ")}
+              </div>
+            )}
+
             <h2 style={{ marginTop: 30 }}>Bowling</h2>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
@@ -339,15 +372,13 @@ export default function UserMatchDetailsPage() {
                 </tr>
               </thead>
               <tbody>
-                {bowlRows.map((b) => (
-                  <tr key={b.id}>
+                {bowlRows.map((b, index) => (
+                  <tr key={b.id || b.player_id || index}>
                     <td style={tdS}>{b.player_name}</td>
                     <td style={tdS}>{b.overs}</td>
                     <td style={tdS}>{b.runs_conceded}</td>
                     <td style={tdS}>{b.wickets}</td>
-                    <td style={tdS}>
-                      {calcEco(b.runs_conceded, b.overs)}
-                    </td>
+                    <td style={tdS}>{calcEco(b.runs_conceded, b.overs)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -355,7 +386,6 @@ export default function UserMatchDetailsPage() {
           </div>
         )}
 
-        {/* PLAYER OF MATCH */}
         {match.player_of_match && (
           <div
             style={{
@@ -366,12 +396,8 @@ export default function UserMatchDetailsPage() {
               textAlign: "center",
             }}
           >
-            <h3 style={{ color: "#d85a30" }}>
-              Player of the Match
-            </h3>
-            <p style={{ fontSize: 18 }}>
-              {match.player_of_match}
-            </p>
+            <h3 style={{ color: "#d85a30" }}>Player of the Match</h3>
+            <p style={{ fontSize: 18 }}>{match.player_of_match}</p>
           </div>
         )}
       </div>

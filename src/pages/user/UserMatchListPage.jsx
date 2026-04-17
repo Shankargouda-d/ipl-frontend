@@ -1,147 +1,424 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState, useCallback } from "react";
+import { Link, useParams } from "react-router-dom";
 import http from "../../api/http";
 
 function Navbar() {
   return (
-    <nav style={{ background: "#111", borderBottom: "1px solid #1a1a1a",
-      padding: "14px 24px", display: "flex", gap: 24,
-      alignItems: "center", flexWrap: "wrap" }}>
-      <Link to="/" style={{ color: "#d85a30", fontWeight: 700,
-        textDecoration: "none", fontSize: 18 }}>🏏 IPL</Link>
-      {[["Matches", "/matches"], ["Stats", "/stats"], ["Points", "/points"]].map(([l, h]) => (
-        <Link key={l} to={h} style={{ color: "#888", textDecoration: "none", fontSize: 14 }}>{l}</Link>
+    <nav
+      style={{
+        background: "#111",
+        borderBottom: "1px solid #1a1a1a",
+        padding: "14px 24px",
+        display: "flex",
+        gap: 24,
+        alignItems: "center",
+        flexWrap: "wrap",
+      }}
+    >
+      <Link
+        to="/"
+        style={{
+          color: "#d85a30",
+          fontWeight: 700,
+          textDecoration: "none",
+          fontSize: 18,
+        }}
+      >
+        🏏 IPL
+      </Link>
+
+      {[
+        ["Matches", "/matches"],
+        ["Stats", "/stats"],
+        ["Points", "/points"],
+      ].map(([label, href]) => (
+        <Link
+          key={label}
+          to={href}
+          style={{ color: "#888", textDecoration: "none", fontSize: 14 }}
+        >
+          {label}
+        </Link>
       ))}
+
       <div style={{ marginLeft: "auto" }}>
-        <Link to="/admin" style={{ color: "#555", textDecoration: "none", fontSize: 12 }}>Admin</Link>
+        <Link
+          to="/admin"
+          style={{ color: "#555", textDecoration: "none", fontSize: 12 }}
+        >
+          Admin
+        </Link>
       </div>
     </nav>
   );
 }
 
-function MatchCard({ match }) {
-  const statusColor = {
-    live: "#639922",
-    scheduled: "#378ADD",
-    completed: "#888",
-  };
+const thS = {
+  padding: "10px 14px",
+  textAlign: "left",
+  color: "#666",
+  fontSize: 11,
+  fontWeight: 600,
+  borderBottom: "1px solid #2a2a2a",
+  whiteSpace: "nowrap",
+};
 
-  return (
-    <Link to={`/matches/${match.match_id}`} style={{ textDecoration: "none" }}>
-      <div style={{
-        background: "#1a1a1a", border: "1px solid #2a2a2a", borderRadius: 12,
-        padding: "16px 20px", marginBottom: 12, display: "flex",
-        justifyContent: "space-between", alignItems: "center",
-        flexWrap: "wrap", gap: 10, cursor: "pointer",
-        transition: "border-color 0.2s",
-      }}>
-        <div>
-          {/* Team names */}
-          <div style={{ fontWeight: 700, fontSize: 17, color: "#fff", marginBottom: 4 }}>
-            {match.team1_name} vs {match.team2_name}
-          </div>
+const tdS = {
+  padding: "10px 14px",
+  borderBottom: "1px solid #111",
+  whiteSpace: "nowrap",
+};
 
-          {/* Short names as subtitle */}
-          <div style={{ color: "#666", fontSize: 12, marginBottom: 6 }}>
-            {match.team1_short} vs {match.team2_short}
-          </div>
-
-          {/* Date and venue */}
-          <div style={{ color: "#888", fontSize: 13 }}>
-            {new Date(match.match_date).toDateString()} · {match.venue}
-          </div>
-
-          {/* Result text for completed matches */}
-          {match.result_text && (
-            <div style={{ color: "#639922", fontSize: 13, marginTop: 6,
-              fontWeight: 500 }}>
-              {match.result_text}
-            </div>
-          )}
-
-          {/* POTM */}
-          {match.potm_name && (
-            <div style={{ color: "#EF9F27", fontSize: 12, marginTop: 4 }}>
-              🏅 POTM: {match.potm_name}
-            </div>
-          )}
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{
-            padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 700,
-            background: (statusColor[match.status] || "#888") + "22",
-            color: statusColor[match.status] || "#888",
-          }}>
-            {match.status === "live" ? "🔴 LIVE"
-              : match.status === "scheduled" ? "📅 UPCOMING"
-              : "✅ COMPLETED"}
-          </span>
-          <span style={{ color: "#555", fontSize: 18 }}>›</span>
-        </div>
-      </div>
-    </Link>
-  );
+function calcSR(runs, balls) {
+  if (!balls || parseInt(balls, 10) === 0) return "-";
+  return ((parseInt(runs, 10) / parseInt(balls, 10)) * 100).toFixed(2);
 }
 
-export default function UserMatchListPage() {
-  const [tab, setTab] = useState("live");
-  const [matches, setMatches] = useState([]);
-  const [loading, setLoading] = useState(false);
+function calcEco(runs, overs) {
+  if (!overs || parseFloat(overs) === 0) return "-";
+  return (parseInt(runs, 10) / parseFloat(overs)).toFixed(2);
+}
 
-  const loadMatches = (status) => {
+function getDismissalText(b) {
+  if (!b.dismissal_type || b.dismissal_type === "not out") {
+    return <span style={{ color: "#639922", fontWeight: 500 }}>not out</span>;
+  }
+
+  if (b.dismissal_type === "did not bat") {
+    return <span style={{ color: "#555" }}>did not bat</span>;
+  }
+
+  if (b.dismissal_type === "bowled") {
+    return (
+      <span>
+        b <strong>{b.wicket_taker_name || ""}</strong>
+      </span>
+    );
+  }
+
+  if (b.dismissal_type === "lbw") {
+    return (
+      <span>
+        lbw b <strong>{b.wicket_taker_name || ""}</strong>
+      </span>
+    );
+  }
+
+  if (b.dismissal_type === "caught") {
+    if (
+      b.fielder_name &&
+      b.wicket_taker_name &&
+      b.fielder_name !== b.wicket_taker_name
+    ) {
+      return (
+        <span>
+          c <strong>{b.fielder_name}</strong> b{" "}
+          <strong>{b.wicket_taker_name}</strong>
+        </span>
+      );
+    }
+
+    return (
+      <span>
+        c &amp; b <strong>{b.wicket_taker_name || ""}</strong>
+      </span>
+    );
+  }
+
+  if (b.dismissal_type === "stumped") {
+    return (
+      <span>
+        st <strong>{b.fielder_name || ""}</strong> b{" "}
+        <strong>{b.wicket_taker_name || ""}</strong>
+      </span>
+    );
+  }
+
+  if (b.dismissal_type === "run out") {
+    return (
+      <span>
+        run out {b.fielder_name ? <strong>({b.fielder_name})</strong> : ""}
+      </span>
+    );
+  }
+
+  if (b.dismissal_type === "hit wicket") {
+    return (
+      <span>
+        hit wkt b <strong>{b.wicket_taker_name || ""}</strong>
+      </span>
+    );
+  }
+
+  return <span style={{ color: "#888" }}>{b.dismissal_type}</span>;
+}
+
+function oversDisplay(inn) {
+  if (!inn) return "";
+  if (Number(inn.total_wickets) >= 10) {
+    return `All out · ${inn.overs} ov`;
+  }
+  return `${inn.overs} ov`;
+}
+
+export default function UserMatchDetailsPage() {
+  const { id } = useParams();
+
+  const [match, setMatch] = useState(null);
+  const [innings, setInnings] = useState([]);
+  const [batting, setBatting] = useState({});
+  const [bowling, setBowling] = useState({});
+  const [activeInnings, setActiveInnings] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+
+  const loadAll = useCallback(async () => {
     setLoading(true);
-    const query = status && status !== "all" ? `?status=${status}` : "";
-    http.get(`/matches${query}`)
-      .then((r) => { setMatches(r.data); setLoading(false); })
-      .catch(() => setLoading(false));
-  };
+    setLoadError("");
 
-  const switchTab = (t) => {
-    setTab(t);
-    loadMatches(t);
-  };
+    try {
+      const [mr, ir] = await Promise.all([
+        http.get(`/matches/${id}`),
+        http.get(`/innings/match/${id}`),
+      ]);
 
-  useEffect(() => { loadMatches("live"); }, []);
+      const matchData = mr?.data || null;
+      const inningsData = ir?.data || [];
 
-  const tabs = [
-    ["live", "🔴 Live"],
-    ["scheduled", "📅 Upcoming"],
-    ["completed", "✅ Completed"],
-    ["all", "All"],
-  ];
+      setMatch(matchData);
+      setInnings(inningsData);
+      setActiveInnings(0);
+
+      const batMap = {};
+      const bowlMap = {};
+
+      await Promise.all(
+        inningsData.map(async (inn) => {
+          try {
+            const [batRes, bowlRes] = await Promise.all([
+              http.get(`/innings/${inn.innings_id}/batting`),
+              http.get(`/innings/${inn.innings_id}/bowling`),
+            ]);
+
+            batMap[inn.innings_id] = batRes?.data || [];
+            bowlMap[inn.innings_id] = bowlRes?.data || [];
+          } catch {
+            batMap[inn.innings_id] = [];
+            bowlMap[inn.innings_id] = [];
+          }
+        })
+      );
+
+      setBatting(batMap);
+      setBowling(bowlMap);
+    } catch (e) {
+      console.error("loadAll error:", e);
+      setLoadError(e?.response?.data?.error || e.message || "Failed to load match details");
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    loadAll();
+  }, [loadAll]);
+
+  const currentInnings =
+    innings.length > 0
+      ? innings[Math.min(activeInnings, innings.length - 1)]
+      : null;
+
+  const batRows =
+    currentInnings && batting[currentInnings.innings_id]
+      ? batting[currentInnings.innings_id]
+      : [];
+
+  const bowlRows =
+    currentInnings && bowling[currentInnings.innings_id]
+      ? bowling[currentInnings.innings_id]
+      : [];
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "#0a0a0a",
+          color: "#fff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        Loading scorecard...
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "#0a0a0a",
+          color: "#fff",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 14,
+          padding: 20,
+          textAlign: "center",
+        }}
+      >
+        <p style={{ color: "#F09595", fontSize: 16 }}>❌ {loadError}</p>
+        <Link to="/matches" style={{ color: "#d85a30", textDecoration: "none" }}>
+          ← Back to Matches
+        </Link>
+      </div>
+    );
+  }
+
+  if (!match) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "#0a0a0a",
+          color: "#fff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        Match not found.
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: "100vh", background: "#0a0a0a", color: "#fff" }}>
       <Navbar />
+
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "32px 16px" }}>
+        <Link to="/matches" style={{ color: "#888", textDecoration: "none" }}>
+          ← All Matches
+        </Link>
 
-        <h1 style={{ margin: "0 0 24px", fontSize: 24 }}>Matches</h1>
+        <div style={{ textAlign: "center", margin: "24px 0 32px" }}>
+          <h1>
+            {match.team1_name} vs {match.team2_name}
+          </h1>
+          <div style={{ color: "#aaa", fontSize: 13 }}>
+            {match.venue || "Unknown Venue"} •{" "}
+            {match.match_date
+              ? new Date(match.match_date).toLocaleDateString()
+              : ""}
+          </div>
+        </div>
 
-        {/* Tab buttons */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
-          {tabs.map(([k, l]) => (
-            <button key={k} onClick={() => switchTab(k)}
+        <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
+          {innings.map((inn, index) => (
+            <button
+              key={inn.innings_id}
+              onClick={() => setActiveInnings(index)}
               style={{
-                padding: "8px 18px", borderRadius: 20, border: "none",
-                cursor: "pointer", fontSize: 13,
-                background: tab === k ? "#d85a30" : "#1a1a1a",
-                color: tab === k ? "#fff" : "#888",
-              }}>
-              {l}
+                padding: "8px 16px",
+                borderRadius: 20,
+                border: "none",
+                cursor: "pointer",
+                background: activeInnings === index ? "#d85a30" : "#1a1a1a",
+                color: activeInnings === index ? "#fff" : "#aaa",
+              }}
+            >
+              {inn.team_name} Innings
             </button>
           ))}
         </div>
 
-        {loading ? (
-          <p style={{ color: "#666" }}>Loading...</p>
-        ) : matches.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "48px 0", color: "#555" }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>🏏</div>
-            <p>No {tab === "all" ? "" : tab} matches found.</p>
+        {currentInnings && (
+          <div>
+            <h3>
+              {currentInnings.team_name} - {currentInnings.total_runs}/
+              {currentInnings.total_wickets} ({oversDisplay(currentInnings)})
+            </h3>
+
+            <h2>Batting</h2>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr>
+                  <th style={thS}>Batsman</th>
+                  <th style={thS}>R</th>
+                  <th style={thS}>B</th>
+                  <th style={thS}>4s</th>
+                  <th style={thS}>6s</th>
+                  <th style={thS}>SR</th>
+                </tr>
+              </thead>
+              <tbody>
+                {batRows.map((b, index) => (
+                  <tr key={b.id || b.player_id || index}>
+                    <td style={tdS}>
+                      <div>{b.player_name}</div>
+                      <div style={{ fontSize: 12, color: "#888" }}>
+                        {getDismissalText(b)}
+                      </div>
+                    </td>
+                    <td style={tdS}>{b.runs}</td>
+                    <td style={tdS}>{b.balls}</td>
+                    <td style={tdS}>{b.fours || 0}</td>
+                    <td style={tdS}>{b.sixes || 0}</td>
+                    <td style={tdS}>{calcSR(b.runs, b.balls)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <h2 style={{ marginTop: 30 }}>Bowling</h2>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr>
+                  <th style={thS}>Bowler</th>
+                  <th style={thS}>O</th>
+                  <th style={thS}>R</th>
+                  <th style={thS}>W</th>
+                  <th style={thS}>Eco</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bowlRows.map((b, index) => (
+                  <tr key={b.id || b.player_id || index}>
+                    <td style={tdS}>{b.player_name}</td>
+                    <td style={tdS}>{b.overs}</td>
+                    <td style={tdS}>{b.runs_conceded}</td>
+                    <td style={tdS}>{b.wickets}</td>
+                    <td style={tdS}>{calcEco(b.runs_conceded, b.overs)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        ) : (
-          matches.map((m) => <MatchCard key={m.match_id} match={m} />)
+        )}
+
+        {!currentInnings && (
+          <div style={{ marginTop: 24, color: "#888", textAlign: "center" }}>
+            No innings data available yet.
+          </div>
+        )}
+
+        {match.player_of_match && (
+          <div
+            style={{
+              marginTop: 40,
+              padding: 16,
+              background: "#111",
+              borderRadius: 10,
+              textAlign: "center",
+            }}
+          >
+            <h3 style={{ color: "#d85a30" }}>Player of the Match</h3>
+            <p style={{ fontSize: 18 }}>{match.player_of_match}</p>
+          </div>
         )}
       </div>
     </div>

@@ -173,6 +173,7 @@ export default function UserMatchDetailsPage() {
 
   useEffect(() => {
     loadAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const loadAll = async () => {
@@ -221,7 +222,9 @@ export default function UserMatchDetailsPage() {
   const batRows =
     currentInnings && batting[currentInnings.innings_id]
       ? [...batting[currentInnings.innings_id]].sort(
-          (a, b) => (parseInt(a.batting_order, 10) || 999) - (parseInt(b.batting_order, 10) || 999)
+          (a, b) =>
+            (parseInt(a.batting_order, 10) || 999) -
+            (parseInt(b.batting_order, 10) || 999)
         )
       : [];
 
@@ -260,7 +263,7 @@ export default function UserMatchDetailsPage() {
       <div
         style={{
           minHeight: "100vh",
-          background: "#0a0a0a",
+          background: "#0a00a0",
           color: "#fff",
           display: "flex",
           alignItems: "center",
@@ -272,6 +275,9 @@ export default function UserMatchDetailsPage() {
     );
   }
 
+  const team1Short = match.team1_short_name || match.team1_name || "";
+  const team2Short = match.team2_short_name || match.team2_name || "";
+
   return (
     <div style={{ minHeight: "100vh", background: "#0a0a0a", color: "#fff" }}>
       <Navbar />
@@ -281,15 +287,41 @@ export default function UserMatchDetailsPage() {
           ← All Matches
         </Link>
 
-        <div style={{ textAlign: "center", margin: "24px 0 32px" }}>
-          <h1>
-            {match.team1_name} vs {match.team2_name}
+        {/* Result banner if match is completed and we have result_text */}
+        {match.status === "completed" && match.result_text && (
+          <div
+            style={{
+              marginTop: 16,
+              marginBottom: 16,
+              padding: "12px 16px",
+              borderRadius: 8,
+              background:
+                "linear-gradient(90deg, rgba(216,90,48,0.12), rgba(216,90,48,0.03))",
+              border: "1px solid #d85a30",
+              textAlign: "center",
+            }}
+          >
+            <span style={{ color: "#ffd7c5", fontWeight: 600 }}>
+              {match.result_text}
+            </span>
+          </div>
+        )}
+
+        <div style={{ textAlign: "center", margin: "16px 0 28px" }}>
+          <h1 style={{ fontSize: 26, marginBottom: 8 }}>
+            {team1Short} vs {team2Short}
           </h1>
           <div style={{ color: "#aaa", fontSize: 13 }}>
-            {match.venue || "Unknown Venue"} •{" "}
-            {match.match_date
-              ? new Date(match.match_date).toLocaleDateString()
-              : ""}
+            <div>{match.venue || "Unknown Venue"}</div>
+            {match.match_date && (
+              <div>
+                {new Date(match.match_date).toLocaleDateString(undefined, {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })}
+              </div>
+            )}
           </div>
         </div>
 
@@ -303,12 +335,11 @@ export default function UserMatchDetailsPage() {
                 borderRadius: 20,
                 border: "none",
                 cursor: "pointer",
-                background:
-                  activeInnings === index ? "#d85a30" : "#1a1a1a",
+                background: activeInnings === index ? "#d85a30" : "#1a1a1a",
                 color: activeInnings === index ? "#fff" : "#aaa",
               }}
             >
-              {inn.team_name} Innings
+              {inn.team_name} Innings {index + 1}
             </button>
           ))}
         </div>
@@ -386,7 +417,7 @@ export default function UserMatchDetailsPage() {
           </div>
         )}
 
-        {match.player_of_match && (
+        {match && (match.potm_name || match.player_of_match) ? (
           <div
             style={{
               marginTop: 40,
@@ -397,9 +428,11 @@ export default function UserMatchDetailsPage() {
             }}
           >
             <h3 style={{ color: "#d85a30" }}>Player of the Match</h3>
-            <p style={{ fontSize: 18 }}>{match.player_of_match}</p>
+            <p style={{ fontSize: 18 }}>
+              {match.potm_name || match.player_of_match}
+            </p>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

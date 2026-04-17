@@ -594,25 +594,36 @@ export default function ScorecardPage() {
   };
 
   const completeMatch = async () => {
-    if (!potmPlayerId) {
-      setMsg("❌ Please select Player of the Match before completing.");
-      return;
-    }
-    if (!window.confirm("Mark COMPLETED? Stats and points table will auto-update.")) return;
+  if (!potmPlayerId) {
+    setMsg("❌ Please select Player of the Match before completing.");
+    return;
+  }
 
-    setCompleting(true);
-    try {
-      const res = await http.post("/results/complete", {
-        match_id: id,
-        player_of_match_id: potmPlayerId,
-      });
-      alert(`Match Complete!\n${res.data.result_text}\nPOTM: ${res.data.player_of_match}`);
-      navigate("/admin/dashboard");
-    } catch {
-      setMsg("❌ Make sure both innings are saved first.");
-    }
+  if (!window.confirm("Mark COMPLETED? Stats and points table will auto-update.")) {
+    return;
+  }
+
+  setCompleting(true);
+  setMsg("");
+
+  try {
+    const res = await http.post("/results/complete", {
+      match_id: id,
+      player_of_match_id: potmPlayerId,
+    });
+
+    alert(`Match Complete!\n${res.data.result_text}\nPOTM: ${potmPlayerId}`);
+    navigate("/admin/dashboard");
+  } catch (err) {
+    setMsg(
+      err?.response?.data?.error ||
+      err?.response?.data?.sqlMessage ||
+      "❌ Make sure both innings are saved first."
+    );
+  } finally {
     setCompleting(false);
-  };
+  }
+};
 
   if (loadError) {
     return (

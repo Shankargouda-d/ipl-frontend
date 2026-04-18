@@ -1,4 +1,5 @@
 // src/components/MatchBoundaryChart.jsx
+import { getTeamColor } from "../utils/teamColors";
 
 function PieChart({ data, size = 180 }) {
     const total = data.reduce((s, d) => s + d.value, 0);
@@ -84,7 +85,7 @@ function PieChart({ data, size = 180 }) {
     );
 }
 
-const COLORS = ["#d85a30", "#3b82f6"];
+// Team colours are resolved dynamically from the team name via getTeamColor.
 
 export default function MatchBoundaryChart({ innings, batting, match }) {
     // Show only when match status is 'completed' (DB enum: scheduled/live/completed)
@@ -99,34 +100,36 @@ export default function MatchBoundaryChart({ innings, batting, match }) {
     };
 
     // Calculate totals per innings
-    const innData = innings.map((inn) => {
+    const innData = innings.map((inn, idx) => {
         const rows = batting[inn.innings_id] || [];
         const fours = rows.reduce((s, b) => s + (parseInt(b.fours, 10) || 0), 0);
         const sixes = rows.reduce((s, b) => s + (parseInt(b.sixes, 10) || 0), 0);
         const short = shortNameMap[String(inn.batting_team_id)] || inn.battingteamname || "Team";
         const fullName = inn.battingteamname || short;
-        return { team: fullName, short, fours, sixes };
+        // Resolve team colour: prefer full name for better keyword matching
+        const color = getTeamColor(fullName || short, idx);
+        return { team: fullName, short, fours, sixes, color };
     });
 
     const charts = [
         {
             label: "Fours (4s)",
             emoji: "🔷",
-            data: innData.map((d, i) => ({
+            data: innData.map((d) => ({
                 label: d.team,
                 short: d.short,
                 value: d.fours,
-                color: COLORS[i],
+                color: d.color,
             })),
         },
         {
             label: "Sixes (6s)",
             emoji: "💥",
-            data: innData.map((d, i) => ({
+            data: innData.map((d) => ({
                 label: d.team,
                 short: d.short,
                 value: d.sixes,
-                color: COLORS[i],
+                color: d.color,
             })),
         },
     ];

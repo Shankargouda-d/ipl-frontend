@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import http from "../api/http";
+import { getTeamColor } from "../utils/teamColors";
 
 /* ─────────────────────────────────────────────
-   COLOURS
+   DEFAULT SEARCH-BOX ACCENT (before player selected)
 ───────────────────────────────────────────── */
-const C1 = "#d85a30"; // player 1 — orange
-const C2 = "#3b82f6"; // player 2 — blue
+const DEFAULT_C1 = "#d85a30"; // player-1 accent before team is known
+const DEFAULT_C2 = "#3b82f6"; // player-2 accent before team is known
 
 /* ─────────────────────────────────────────────
    SEARCH INPUT with live suggestions
@@ -109,7 +110,7 @@ function PlayerSearchBox({ allPlayers, selected, onSelect, placeholder, color })
 /* ─────────────────────────────────────────────
    PIE CHART (SVG, no library)
 ───────────────────────────────────────────── */
-function MiniPie({ v1, v2, label, c1 = C1, c2 = C2, short1, short2 }) {
+function MiniPie({ v1, v2, label, c1 = DEFAULT_C1, c2 = DEFAULT_C2, short1, short2 }) {
   const total = v1 + v2;
   const size = 140;
   const cx = size / 2, cy = size / 2, r = size / 2 - 8;
@@ -174,7 +175,7 @@ function MiniPie({ v1, v2, label, c1 = C1, c2 = C2, short1, short2 }) {
 /* ─────────────────────────────────────────────
    RUN TREND CHART (SVG line / stock style)
 ───────────────────────────────────────────── */
-function RunTrendChart({ trend1, trend2, name1, name2 }) {
+function RunTrendChart({ trend1, trend2, name1, name2, c1 = DEFAULT_C1, c2 = DEFAULT_C2 }) {
   if (!trend1.length && !trend2.length) return null;
 
   const W = 560, H = 180, PAD = { top: 20, bottom: 40, left: 36, right: 16 };
@@ -245,11 +246,11 @@ function RunTrendChart({ trend1, trend2, name1, name2 }) {
         ))}
 
         {/* Lines */}
-        {path1 && <path d={path1} fill="none" stroke={C1} strokeWidth={2} strokeLinejoin="round" />}
-        {path2 && <path d={path2} fill="none" stroke={C2} strokeWidth={2} strokeLinejoin="round" />}
+        {path1 && <path d={path1} fill="none" stroke={c1} strokeWidth={2} strokeLinejoin="round" />}
+        {path2 && <path d={path2} fill="none" stroke={c2} strokeWidth={2} strokeLinejoin="round" />}
 
         {/* Dots + trend arrows */}
-        {[{ trend: trend1, color: C1 }, { trend: trend2, color: C2 }].map(({ trend, color }, ti) =>
+        {[{ trend: trend1, color: c1 }, { trend: trend2, color: c2 }].map(({ trend, color }, ti) =>
           allLabels.map((l, i) => {
             const v = getVal(trend, l);
             if (v === null) return null;
@@ -273,7 +274,7 @@ function RunTrendChart({ trend1, trend2, name1, name2 }) {
 
       {/* Legend */}
       <div style={{ display: "flex", gap: 20, marginTop: 8 }}>
-        {[{ name: name1, color: C1 }, { name: name2, color: C2 }].map(({ name, color }) => (
+        {[{ name: name1, color: c1 }, { name: name2, color: c2 }].map(({ name, color }) => (
           <span key={name} style={{ fontSize: 12, color: "#aaa", display: "flex", alignItems: "center", gap: 6 }}>
             <span style={{ width: 24, height: 2, background: color, display: "inline-block", borderRadius: 2 }} />
             {name}
@@ -287,12 +288,12 @@ function RunTrendChart({ trend1, trend2, name1, name2 }) {
 /* ─────────────────────────────────────────────
    STAT ROW (for compare cards)
 ───────────────────────────────────────────── */
-function StatRow({ label, v1, v2, highlight = false }) {
+function StatRow({ label, v1, v2, highlight = false, c1 = DEFAULT_C1, c2 = DEFAULT_C2 }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #111" }}>
-      <span style={{ color: highlight ? C1 : "#888", fontSize: 13, fontWeight: highlight ? 700 : 400 }}>{v1}</span>
+      <span style={{ color: highlight ? c1 : "#888", fontSize: 13, fontWeight: highlight ? 700 : 400 }}>{v1}</span>
       <span style={{ color: "#555", fontSize: 12, flex: 1, textAlign: "center" }}>{label}</span>
-      <span style={{ color: highlight ? C2 : "#fff", fontSize: 13, fontWeight: highlight ? 700 : 600 }}>{v2}</span>
+      <span style={{ color: highlight ? c2 : "#fff", fontSize: 13, fontWeight: highlight ? 700 : 600 }}>{v2}</span>
     </div>
   );
 }
@@ -335,6 +336,10 @@ export default function PlayerCompare() {
   const p1 = compareData?.[0];
   const p2 = compareData?.[1];
 
+  // Resolve per-team IPL brand colours from the player's team name
+  const c1 = p1 ? getTeamColor(p1.team_name || "", 0) : DEFAULT_C1;
+  const c2 = p2 ? getTeamColor(p2.team_name || "", 1) : DEFAULT_C2;
+
   const showWickets = p1 && p2 && (Number(p1.total_wickets) > 0 || Number(p2.total_wickets) > 0);
 
   return (
@@ -353,7 +358,7 @@ export default function PlayerCompare() {
             selected={sel1}
             onSelect={setSel1}
             placeholder="Search Player 1..."
-            color={C1}
+            color={p1 ? c1 : DEFAULT_C1}
           />
           <span style={{ color: "#555", alignSelf: "center", fontWeight: 700, paddingTop: sel1 ? 36 : 0 }}>vs</span>
           <PlayerSearchBox
@@ -361,7 +366,7 @@ export default function PlayerCompare() {
             selected={sel2}
             onSelect={setSel2}
             placeholder="Search Player 2..."
-            color={C2}
+            color={p2 ? c2 : DEFAULT_C2}
           />
           <button
             onClick={handleCompare}
@@ -382,22 +387,21 @@ export default function PlayerCompare() {
       {/* ── Stats Cards (existing layout) ── */}
       {compareData?.length === 2 && (
         <>
-          {/* Header row with names */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 4 }}>
             {[p1, p2].map((p, i) => (
               <div key={p.player_id} style={{
-                background: "#1a1a1a", border: `1px solid ${[C1, C2][i]}44`,
+                background: "#1a1a1a", border: `1px solid ${[c1, c2][i]}44`,
                 borderRadius: 12, padding: 20,
               }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, paddingBottom: 14, borderBottom: "1px solid #2a2a2a" }}>
-                  <span style={{ width: 12, height: 12, borderRadius: "50%", background: [C1, C2][i], display: "inline-block", flexShrink: 0 }} />
+                  <span style={{ width: 12, height: 12, borderRadius: "50%", background: [c1, c2][i], display: "inline-block", flexShrink: 0 }} />
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 17 }}>{p.player_name}</div>
                     <div style={{ color: "#666", fontSize: 12 }}>{p.team_name} · {p.role}</div>
                   </div>
                 </div>
 
-                <div style={{ color: [C1, C2][i], fontSize: 11, fontWeight: 700, marginBottom: 8, letterSpacing: 1 }}>BATTING</div>
+                <div style={{ color: [c1, c2][i], fontSize: 11, fontWeight: 700, marginBottom: 8, letterSpacing: 1 }}>BATTING</div>
                 {[
                   ["Matches", p.bat_matches],
                   ["Runs", p.total_runs],
@@ -446,19 +450,23 @@ export default function PlayerCompare() {
               <MiniPie
                 v1={Number(p1.total_runs)} v2={Number(p2.total_runs)}
                 label="Runs" short1={p1.short_name} short2={p2.short_name}
+                c1={c1} c2={c2}
               />
               <MiniPie
                 v1={Number(p1.total_fours)} v2={Number(p2.total_fours)}
                 label="Fours (4s)" short1={p1.short_name} short2={p2.short_name}
+                c1={c1} c2={c2}
               />
               <MiniPie
                 v1={Number(p1.total_sixes)} v2={Number(p2.total_sixes)}
                 label="Sixes (6s)" short1={p1.short_name} short2={p2.short_name}
+                c1={c1} c2={c2}
               />
               {showWickets && (
                 <MiniPie
                   v1={Number(p1.total_wickets)} v2={Number(p2.total_wickets)}
                   label="Wickets" short1={p1.short_name} short2={p2.short_name}
+                  c1={c1} c2={c2}
                 />
               )}
             </div>
@@ -471,6 +479,8 @@ export default function PlayerCompare() {
                   trend2={trend2}
                   name1={p1.player_name}
                   name2={p2.player_name}
+                  c1={c1}
+                  c2={c2}
                 />
               </div>
             )}

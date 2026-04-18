@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import http from "../../api/http";
+import MatchBoundaryChart from "../../components/MatchBoundaryChart";
 
 function Navbar() {
   return (
@@ -222,10 +223,10 @@ export default function UserMatchDetailsPage() {
   const batRows =
     currentInnings && batting[currentInnings.innings_id]
       ? [...batting[currentInnings.innings_id]].sort(
-          (a, b) =>
-            (parseInt(a.batting_order, 10) || 999) -
-            (parseInt(b.batting_order, 10) || 999)
-        )
+        (a, b) =>
+          (parseInt(a.batting_order, 10) || 999) -
+          (parseInt(b.batting_order, 10) || 999)
+      )
       : [];
 
   const bowlRows =
@@ -433,7 +434,8 @@ export default function UserMatchDetailsPage() {
             </p>
           </div>
         ) : null}
-      </div>
+      </div>{ }
+      <MatchBoundaryChart innings={innings} batting={batting} match={match} />
     </div>
   );
 }

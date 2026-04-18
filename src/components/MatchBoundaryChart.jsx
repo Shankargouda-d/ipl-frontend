@@ -1,7 +1,8 @@
 // src/components/MatchBoundaryChart.jsx
 
-function PieChart({ data, size = 160 }) {
+function PieChart({ data, size = 180 }) {
     const total = data.reduce((s, d) => s + d.value, 0);
+
     if (total === 0) {
         return (
             <svg width={size} height={size}>
@@ -35,10 +36,12 @@ function PieChart({ data, size = 160 }) {
         const largeArc = angle > Math.PI ? 1 : 0;
         const path = `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z`;
         const midAngle = startAngle + angle / 2;
-        const labelX = cx + (r * 0.6) * Math.cos(midAngle);
-        const labelY = cy + (r * 0.6) * Math.sin(midAngle);
+        // label at 58% of radius from center
+        const labelX = cx + r * 0.58 * Math.cos(midAngle);
+        const labelY = cy + r * 0.58 * Math.sin(midAngle);
+        const pct = Math.round((d.value / total) * 100);
         startAngle = endAngle;
-        return { path, color: d.color, label: d.value, labelX, labelY, pct: Math.round((d.value / total) * 100) };
+        return { path, color: d.color, short: d.short, pct, labelX, labelY, angle };
     });
 
     return (
@@ -46,18 +49,34 @@ function PieChart({ data, size = 160 }) {
             {slices.map((s, i) => (
                 <g key={i}>
                     <path d={s.path} fill={s.color} stroke="#0a0a0a" strokeWidth={2} />
-                    {s.pct >= 10 && (
-                        <text
-                            x={s.labelX}
-                            y={s.labelY}
-                            textAnchor="middle"
-                            dominantBaseline="middle"
-                            fill="#fff"
-                            fontSize={12}
-                            fontWeight={700}
-                        >
-                            {s.pct}%
-                        </text>
+                    {/* Only show label if slice is big enough (>= 12%) */}
+                    {s.pct >= 12 && (
+                        <>
+                            {/* Team short name on top line */}
+                            <text
+                                x={s.labelX}
+                                y={s.labelY - 7}
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                                fill="#fff"
+                                fontSize={11}
+                                fontWeight={700}
+                            >
+                                {s.short}
+                            </text>
+                            {/* Percentage on bottom line */}
+                            <text
+                                x={s.labelX}
+                                y={s.labelY + 7}
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                                fill="#fff"
+                                fontSize={11}
+                                fontWeight={600}
+                            >
+                                {s.pct}%
+                            </text>
+                        </>
                     )}
                 </g>
             ))}
@@ -72,24 +91,43 @@ export default function MatchBoundaryChart({ innings, batting, match }) {
     if (!match || match.status !== "completed") return null;
     if (!innings || innings.length < 1) return null;
 
+    // Build short name lookup: batting_team_id -> short name
+    // match has team1_id, team1_short, team2_id, team2_short from API
+    const shortNameMap = {
+        [String(match.team1_id)]: match.team1_short || match.team1_name || "T1",
+        [String(match.team2_id)]: match.team2_short || match.team2_name || "T2",
+    };
+
     // Calculate totals per innings
     const innData = innings.map((inn) => {
         const rows = batting[inn.innings_id] || [];
         const fours = rows.reduce((s, b) => s + (parseInt(b.fours, 10) || 0), 0);
         const sixes = rows.reduce((s, b) => s + (parseInt(b.sixes, 10) || 0), 0);
-        return { team: inn.team_name, fours, sixes };
+        const short = shortNameMap[String(inn.batting_team_id)] || inn.battingteamname || "Team";
+        const fullName = inn.battingteamname || short;
+        return { team: fullName, short, fours, sixes };
     });
 
     const charts = [
         {
-            label: "4s Comparison",
+            label: "Fours (4s)",
             emoji: "🔷",
-            data: innData.map((d, i) => ({ label: d.team, value: d.fours, color: COLORS[i] })),
+            data: innData.map((d, i) => ({
+                label: d.team,
+                short: d.short,
+                value: d.fours,
+                color: COLORS[i],
+            })),
         },
         {
-            label: "6s Comparison",
+            label: "Sixes (6s)",
             emoji: "💥",
-            data: innData.map((d, i) => ({ label: d.team, value: d.sixes, color: COLORS[i] })),
+            data: innData.map((d, i) => ({
+                label: d.team,
+                short: d.short,
+                value: d.sixes,
+                color: COLORS[i],
+            })),
         },
     ];
 
@@ -133,42 +171,64 @@ export default function MatchBoundaryChart({ innings, batting, match }) {
                                 background: "#0d0d0d",
                                 borderRadius: 12,
                                 padding: "20px 24px",
-                                minWidth: 200,
+                                minWidth: 220,
                                 border: "1px solid #222",
                             }}
                         >
+                            {/* Chart title */}
                             <div
                                 style={{ color: "#aaa", fontSize: 13, marginBottom: 16, fontWeight: 600 }}
                             >
                                 {chart.emoji} {chart.label}
                             </div>
 
+                            {/* Pie chart */}
                             <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
-                                <PieChart data={chart.data} size={160} />
+                                <PieChart data={chart.data} size={180} />
                             </div>
 
-                            {/* Legend */}
+                            {/* Legend — color dot + full team name + count */}
                             <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start" }}>
-                                {chart.data.map((d, i) => (
-                                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                        <span
-                                            style={{
-                                                display: "inline-block",
-                                                width: 12,
-                                                height: 12,
-                                                borderRadius: "50%",
-                                                background: d.color,
-                                                flexShrink: 0,
-                                            }}
-                                        />
-                                        <span style={{ color: "#ccc", fontSize: 13 }}>
-                                            {d.label}
-                                        </span>
-                                        <span style={{ color: "#fff", fontWeight: 700, fontSize: 13, marginLeft: "auto" }}>
-                                            {d.value}
-                                        </span>
-                                    </div>
-                                ))}
+                                {chart.data.map((d, i) => {
+                                    const pct = total > 0 ? Math.round((d.value / total) * 100) : 0;
+                                    return (
+                                        <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%" }}>
+                                            <span
+                                                style={{
+                                                    display: "inline-block",
+                                                    width: 12,
+                                                    height: 12,
+                                                    borderRadius: "50%",
+                                                    background: d.color,
+                                                    flexShrink: 0,
+                                                }}
+                                            />
+                                            {/* Short name badge */}
+                                            <span
+                                                style={{
+                                                    background: d.color + "22",
+                                                    color: d.color,
+                                                    fontSize: 11,
+                                                    fontWeight: 700,
+                                                    padding: "2px 6px",
+                                                    borderRadius: 4,
+                                                    letterSpacing: 0.5,
+                                                }}
+                                            >
+                                                {d.short}
+                                            </span>
+                                            <span style={{ color: "#ccc", fontSize: 12, flex: 1 }}>
+                                                {d.label}
+                                            </span>
+                                            <span style={{ color: "#fff", fontWeight: 700, fontSize: 13 }}>
+                                                {d.value}
+                                            </span>
+                                            <span style={{ color: "#555", fontSize: 11 }}>
+                                                ({pct}%)
+                                            </span>
+                                        </div>
+                                    );
+                                })}
                                 <div style={{ color: "#555", fontSize: 12, marginTop: 4 }}>
                                     Total: {total}
                                 </div>

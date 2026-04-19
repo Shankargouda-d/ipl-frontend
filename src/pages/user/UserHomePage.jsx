@@ -154,7 +154,7 @@ export default function UserHomePage() {
           zIndex: 0,
         }} />
         <div style={{ position: "relative", zIndex: 1 }}>
-          <img src="/ipl_logo.png" alt="TATA IPL 2026" style={{ width: 100, height: 100, objectFit: "contain", marginBottom: 10, filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.9))" }} />
+          <img src="/ipl_logo.png" alt="TATA IPL 2026" style={{ width: 120, height: 120, objectFit: "contain", marginBottom: 10, filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.9))", mixBlendMode: "screen" }} />
           <h1 style={{ fontSize: 42, fontWeight: 900, margin: "0 0 10px", textShadow: "0 2px 20px rgba(0,0,0,0.9)", letterSpacing: "-0.5px" }}>
             TATA IPL 2026
           </h1>

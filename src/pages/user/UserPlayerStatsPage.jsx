@@ -29,7 +29,7 @@ export default function UserPlayerStatsPage() {
       <Navbar />
       <div style={{ maxWidth: 1000, margin: "0 auto", padding: "32px 16px" }}>
         <h1 style={{ margin: "0 0 8px", fontSize: 28, fontWeight: 700 }}>Player Statistics</h1>
-        <p style={{ color: "#666", marginBottom: 28 }}>IPL 2025 season leaderboards</p>
+        <p style={{ color: "#666", marginBottom: 28 }}>TATA IPL 2026 season leaderboards</p>
 
         {/* Tab bar */}
         <div style={{ display: "flex", gap: 6, marginBottom: 28, flexWrap: "wrap" }}>

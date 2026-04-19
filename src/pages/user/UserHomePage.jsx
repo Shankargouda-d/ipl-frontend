@@ -63,14 +63,38 @@ export default function UserHomePage() {
   return (
     <div style={{ minHeight: "100vh", background: "#0a0a0a", color: "#fff" }}>
       <Navbar />
-      <div style={{ textAlign: "center", padding: "64px 16px 48px", background: "linear-gradient(180deg,#1a0a00 0%,#0a0a0a 100%)" }}>
-        <div style={{ fontSize: 56, marginBottom: 8 }}>🏏</div>
-        <h1 style={{ fontSize: 36, fontWeight: 800, margin: "0 0 8px" }}>IPL Scorecard 2025</h1>
-        <p style={{ color: "#888", fontSize: 16, marginBottom: 28 }}>Live scores · Stats · Points Table</p>
-        <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-          <Link to="/matches" style={{ padding: "12px 24px", borderRadius: 10, background: "#d85a30", color: "#fff", textDecoration: "none", fontWeight: 600, fontSize: 15 }}>View All Matches</Link>
-          <Link to="/stats" style={{ padding: "12px 24px", borderRadius: 10, background: "#1a1a1a", color: "#fff", textDecoration: "none", fontWeight: 600, fontSize: 15, border: "1px solid #333" }}>Player Stats</Link>
-          <Link to="/points" style={{ padding: "12px 24px", borderRadius: 10, background: "#1a1a1a", color: "#fff", textDecoration: "none", fontWeight: 600, fontSize: 15, border: "1px solid #333" }}>Points Table</Link>
+      <div style={{
+        position: "relative",
+        textAlign: "center",
+        padding: "90px 16px 70px",
+        backgroundImage: "url('/ipl_hero_bg.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        overflow: "hidden",
+      }}>
+        {/* Dark gradient overlay */}
+        <div style={{
+          position: "absolute", inset: 0,
+          background: "linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(10,10,10,0.85) 70%, #0a0a0a 100%)",
+          zIndex: 0,
+        }} />
+        {/* Content */}
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <div style={{ fontSize: 60, marginBottom: 10, filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.8))" }}>🏏</div>
+          <h1 style={{
+            fontSize: 42, fontWeight: 900, margin: "0 0 10px",
+            textShadow: "0 2px 20px rgba(0,0,0,0.9)",
+            letterSpacing: "-0.5px",
+          }}>TATA IPL 2026</h1>
+          <p style={{
+            color: "#ccc", fontSize: 16, marginBottom: 32,
+            textShadow: "0 1px 8px rgba(0,0,0,0.8)",
+          }}>Live scores · Stats · Points Table</p>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+            <Link to="/matches" style={{ padding: "13px 28px", borderRadius: 10, background: "#d85a30", color: "#fff", textDecoration: "none", fontWeight: 700, fontSize: 15, boxShadow: "0 4px 20px rgba(216,90,48,0.45)" }}>View All Matches</Link>
+            <Link to="/stats" style={{ padding: "13px 28px", borderRadius: 10, background: "rgba(255,255,255,0.1)", backdropFilter: "blur(8px)", color: "#fff", textDecoration: "none", fontWeight: 600, fontSize: 15, border: "1px solid rgba(255,255,255,0.2)" }}>Player Stats</Link>
+            <Link to="/points" style={{ padding: "13px 28px", borderRadius: 10, background: "rgba(255,255,255,0.1)", backdropFilter: "blur(8px)", color: "#fff", textDecoration: "none", fontWeight: 600, fontSize: 15, border: "1px solid rgba(255,255,255,0.2)" }}>Points Table</Link>
+          </div>
         </div>
       </div>
 

@@ -28,7 +28,7 @@ export default function UserPointsTablePage() {
       <Navbar />
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "32px 16px" }}>
         <h1 style={{ margin: "0 0 8px" }}>Points Table</h1>
-        <p style={{ color: "#666", fontSize: 14, marginBottom: 24 }}>IPL 2025 standings</p>
+        <p style={{ color: "#666", fontSize: 14, marginBottom: 24 }}>TATA IPL 2026 standings</p>
 
         <div style={{ background: "#1a1a1a", border: "1px solid #2a2a2a", borderRadius: 12, overflow: "hidden" }}>
           <div style={{ overflowX: "auto" }}>

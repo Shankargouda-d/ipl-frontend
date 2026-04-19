@@ -345,11 +345,6 @@ export default function PlayerCompare() {
                   }} />
                   <img src="/cricket_avatar.png" alt={p1.player_name}
                     style={{ width: "100%", height: "100%", objectFit: "contain", mixBlendMode: "multiply", position: "relative", zIndex: 1 }} />
-                  {/* Team color hue overlay */}
-                  <div style={{
-                    position: "absolute", inset: 0, zIndex: 2,
-                    background: c1, mixBlendMode: "hue", opacity: 0.88, pointerEvents: "none",
-                  }} />
                 </div>
                 <span style={{ color: c1, fontWeight: 800, fontSize: 15 }}>{p1.player_name}</span>
                 <span style={{ background: `${c1}22`, border: `1px solid ${c1}55`, color: c1, fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 20 }}>{p1.short_name}</span>
@@ -368,10 +363,6 @@ export default function PlayerCompare() {
                   }} />
                   <img src="/cricket_avatar.png" alt={p2.player_name}
                     style={{ width: "100%", height: "100%", objectFit: "contain", mixBlendMode: "multiply", position: "relative", zIndex: 1 }} />
-                  <div style={{
-                    position: "absolute", inset: 0, zIndex: 2,
-                    background: c2, mixBlendMode: "hue", opacity: 0.88, pointerEvents: "none",
-                  }} />
                 </div>
                 <span style={{ color: c2, fontWeight: 800, fontSize: 15 }}>{p2.player_name}</span>
                 <span style={{ background: `${c2}22`, border: `1px solid ${c2}55`, color: c2, fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 20 }}>{p2.short_name}</span>

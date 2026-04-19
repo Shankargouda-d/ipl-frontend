@@ -157,6 +157,7 @@ function BattingTable({
                         dismissal_type: e.target.value,
                         wicket_taker_player_id: "",
                         fielder_player_id: "",
+                        fielder_sub_name: "",
                         ...(e.target.value === "did not bat"
                           ? { runs: "", balls: "", fours: "", sixes: "" }
                           : {})
@@ -189,18 +190,36 @@ function BattingTable({
 
                 <td style={{ padding: "8px 12px" }}>
                   {r.dismissal_type !== "did not bat" && isOut(r.dismissal_type) && needsFielder(r.dismissal_type) ? (
-                    <select
-                      value={r.fielder_player_id || ""}
-                      onChange={(e) => setRows((prev) => prev.map((row, idx) =>
-                        idx === i ? { ...row, fielder_player_id: e.target.value } : row
-                      ))}
-                      style={{ ...ci, minWidth: 130 }}
-                    >
-                      <option value="">Select fielder</option>
-                      {bowlingSquad.map((p) => (
-                        <option key={p.player_id} value={p.player_id}>{p.player_name}</option>
-                      ))}
-                    </select>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                      <select
+                        value={r.fielder_player_id || ""}
+                        onChange={(e) => setRows((prev) => prev.map((row, idx) =>
+                          idx === i ? {
+                            ...row,
+                            fielder_player_id: e.target.value,
+                            fielder_sub_name: e.target.value === "sub_out" ? (row.fielder_sub_name || "") : ""
+                          } : row
+                        ))}
+                        style={{ ...ci, minWidth: 140 }}
+                      >
+                        <option value="">Select fielder</option>
+                        {bowlingSquad.map((p) => (
+                          <option key={p.player_id} value={p.player_id}>{p.player_name}</option>
+                        ))}
+                        <option value="sub_out">🔄 Sub Out</option>
+                      </select>
+                      {r.fielder_player_id === "sub_out" && (
+                        <input
+                          type="text"
+                          placeholder="Enter sub fielder name"
+                          value={r.fielder_sub_name || ""}
+                          onChange={(e) => setRows((prev) => prev.map((row, idx) =>
+                            idx === i ? { ...row, fielder_sub_name: e.target.value } : row
+                          ))}
+                          style={{ ...ci, minWidth: 140, fontSize: 12, padding: "4px 8px" }}
+                        />
+                      )}
+                    </div>
                   ) : <span style={{ color: "#444" }}>—</span>}
                 </td>
 
@@ -484,6 +503,7 @@ export default function ScorecardPage() {
         dismissal_type: "not out",
         wicket_taker_player_id: "",
         fielder_player_id: "",
+        fielder_sub_name: "",
         batting_order: i + 1,
       })));
 
@@ -497,6 +517,7 @@ export default function ScorecardPage() {
         dismissal_type: "not out",
         wicket_taker_player_id: "",
         fielder_player_id: "",
+        fielder_sub_name: "",
         batting_order: i + 1,
       })));
 
@@ -572,7 +593,8 @@ export default function ScorecardPage() {
           sixes: b.dismissal_type === "did not bat" ? 0 : parseInt(b.sixes) || 0,
           dismissal_type: b.dismissal_type || "not out",
           wicket_taker_player_id: b.wicket_taker_player_id || null,
-          fielder_player_id: b.fielder_player_id || null,
+          fielder_player_id: b.fielder_player_id === "sub_out" ? null : (b.fielder_player_id || null),
+          fielder_sub_name: b.fielder_player_id === "sub_out" ? (b.fielder_sub_name || null) : null,
           batting_order: parseInt(b.batting_order) || null,
         })),
         bowling: activeBowlers.map((b) => ({

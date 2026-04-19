@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import http from "../../api/http";
+import { getTeamColor } from "../../utils/teamColors";
 
 function Navbar() {
   return (
@@ -51,45 +52,115 @@ function MatchCard({ match }) {
   );
 }
 
+/* ── Single top-performer card ── */
+function TopCard({ icon, title, accentColor, player, statKey, statLabel, statSuffix = "" }) {
+  if (!player) {
+    return (
+      <div style={{
+        flex: 1, minWidth: 220,
+        background: "#111", border: `1px solid #1f1f1f`,
+        borderRadius: 16, padding: "22px 20px",
+        display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+      }}>
+        <div style={{ fontSize: 30 }}>{icon}</div>
+        <div style={{ color: "#666", fontSize: 12 }}>{title}</div>
+        <div style={{ color: "#333", fontSize: 13 }}>No data yet</div>
+      </div>
+    );
+  }
+
+  const tc = getTeamColor(player.short_name);
+
+  return (
+    <Link to="/stats" style={{ textDecoration: "none", flex: 1, minWidth: 220 }}>
+      <div style={{
+        background: `linear-gradient(135deg, ${accentColor}18 0%, #111 60%)`,
+        border: `1px solid ${accentColor}44`,
+        borderRadius: 16, padding: "22px 20px",
+        display: "flex", flexDirection: "column", alignItems: "center",
+        gap: 8, cursor: "pointer", transition: "transform 0.2s, box-shadow 0.2s",
+        position: "relative", overflow: "hidden",
+      }}
+        onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = `0 8px 28px ${accentColor}33`; }}
+        onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
+      >
+        {/* Top glow strip */}
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)` }} />
+
+        {/* Icon + title */}
+        <div style={{ fontSize: 28 }}>{icon}</div>
+        <div style={{ color: accentColor, fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" }}>{title}</div>
+
+        {/* Big stat */}
+        <div style={{ fontSize: 44, fontWeight: 900, color: accentColor, lineHeight: 1, margin: "4px 0" }}>
+          {player[statKey]}<span style={{ fontSize: 18, fontWeight: 600, color: accentColor + "aa" }}>{statSuffix}</span>
+        </div>
+        <div style={{ color: "#888", fontSize: 10, fontWeight: 600, letterSpacing: 0.5, marginTop: -4 }}>{statLabel}</div>
+
+        {/* Divider */}
+        <div style={{ width: "80%", height: 1, background: "#1f1f1f", margin: "4px 0" }} />
+
+        {/* Player name + team badge */}
+        <div style={{ fontWeight: 800, fontSize: 15, color: "#fff", textAlign: "center" }}>{player.player_name}</div>
+        <span style={{
+          background: `${tc}22`, border: `1px solid ${tc}55`,
+          color: tc, fontSize: 11, fontWeight: 700,
+          padding: "2px 10px", borderRadius: 20,
+        }}>
+          {player.short_name}
+        </span>
+      </div>
+    </Link>
+  );
+}
+
 export default function UserHomePage() {
   const [live, setLive] = useState([]);
   const [upcoming, setUpcoming] = useState([]);
+  const [orangeCap, setOrangeCap] = useState(null);
+  const [purpleCap, setPurpleCap] = useState(null);
+  const [mostSixes, setMostSixes] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   useEffect(() => {
     http.get("/matches?status=live").then((r) => setLive(r.data));
     http.get("/matches?status=scheduled").then((r) => setUpcoming(r.data.slice(0, 3)));
+
+    Promise.all([
+      http.get("/stats/orange-cap"),
+      http.get("/stats/purple-cap"),
+      http.get("/stats/most-sixes"),
+    ]).then(([oc, pc, sx]) => {
+      setOrangeCap(oc.data?.[0] || null);
+      setPurpleCap(pc.data?.[0] || null);
+      setMostSixes(sx.data?.[0] || null);
+    }).finally(() => setStatsLoading(false));
   }, []);
 
   return (
     <div style={{ minHeight: "100vh", background: "#0a0a0a", color: "#fff" }}>
       <Navbar />
+
+      {/* Hero section */}
       <div style={{
-        position: "relative",
-        textAlign: "center",
+        position: "relative", textAlign: "center",
         padding: "90px 16px 70px",
         backgroundImage: "url('/ipl_hero_bg.png')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        overflow: "hidden",
+        backgroundSize: "cover", backgroundPosition: "center", overflow: "hidden",
       }}>
-        {/* Dark gradient overlay */}
         <div style={{
           position: "absolute", inset: 0,
           background: "linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(10,10,10,0.85) 70%, #0a0a0a 100%)",
           zIndex: 0,
         }} />
-        {/* Content */}
         <div style={{ position: "relative", zIndex: 1 }}>
           <div style={{ fontSize: 60, marginBottom: 10, filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.8))" }}>🏏</div>
-          <h1 style={{
-            fontSize: 42, fontWeight: 900, margin: "0 0 10px",
-            textShadow: "0 2px 20px rgba(0,0,0,0.9)",
-            letterSpacing: "-0.5px",
-          }}>TATA IPL 2026</h1>
-          <p style={{
-            color: "#ccc", fontSize: 16, marginBottom: 32,
-            textShadow: "0 1px 8px rgba(0,0,0,0.8)",
-          }}>Live scores · Stats · Points Table</p>
+          <h1 style={{ fontSize: 42, fontWeight: 900, margin: "0 0 10px", textShadow: "0 2px 20px rgba(0,0,0,0.9)", letterSpacing: "-0.5px" }}>
+            TATA IPL 2026
+          </h1>
+          <p style={{ color: "#ccc", fontSize: 16, marginBottom: 32, textShadow: "0 1px 8px rgba(0,0,0,0.8)" }}>
+            Live scores · Stats · Points Table
+          </p>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
             <Link to="/matches" style={{ padding: "13px 28px", borderRadius: 10, background: "#d85a30", color: "#fff", textDecoration: "none", fontWeight: 700, fontSize: 15, boxShadow: "0 4px 20px rgba(216,90,48,0.45)" }}>View All Matches</Link>
             <Link to="/stats" style={{ padding: "13px 28px", borderRadius: 10, background: "rgba(255,255,255,0.1)", backdropFilter: "blur(8px)", color: "#fff", textDecoration: "none", fontWeight: 600, fontSize: 15, border: "1px solid rgba(255,255,255,0.2)" }}>Player Stats</Link>
@@ -98,15 +169,69 @@ export default function UserHomePage() {
         </div>
       </div>
 
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: "32px 16px" }}>
+      <div style={{ maxWidth: 900, margin: "0 auto", padding: "36px 16px" }}>
+
+        {/* ── Top Performers Widget ── */}
+        <div style={{ marginBottom: 48 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+            <div style={{ width: 4, height: 22, background: "#d85a30", borderRadius: 2 }} />
+            <h2 style={{ margin: 0, fontSize: 18 }}>🏅 Season Leaders</h2>
+            <span style={{ color: "#555", fontSize: 12, marginLeft: "auto" }}>TATA IPL 2026</span>
+          </div>
+
+          {statsLoading ? (
+            <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+              {[1, 2, 3].map((i) => (
+                <div key={i} style={{ flex: 1, minWidth: 220, height: 200, background: "#111", borderRadius: 16, border: "1px solid #1f1f1f", animation: "pulse 1.5s infinite" }} />
+              ))}
+            </div>
+          ) : (
+            <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+              <TopCard
+                icon="🟠"
+                title="Orange Cap"
+                accentColor="#d85a30"
+                player={orangeCap}
+                statKey="total_runs"
+                statLabel="RUNS"
+              />
+              <TopCard
+                icon="🟣"
+                title="Purple Cap"
+                accentColor="#7F77DD"
+                player={purpleCap}
+                statKey="total_wickets"
+                statLabel="WICKETS"
+              />
+              <TopCard
+                icon="💥"
+                title="Most Sixes"
+                accentColor="#22c55e"
+                player={mostSixes}
+                statKey="total_sixes"
+                statLabel="SIXES"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Live matches */}
         {live.length > 0 && (
           <div style={{ marginBottom: 32 }}>
-            <h2 style={{ fontSize: 18, marginBottom: 16 }}>🟢 Live Now</h2>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+              <div style={{ width: 4, height: 22, background: "#639922", borderRadius: 2 }} />
+              <h2 style={{ margin: 0, fontSize: 18 }}>🟢 Live Now</h2>
+            </div>
             {live.map((m) => <MatchCard key={m.match_id} match={m} />)}
           </div>
         )}
+
+        {/* Upcoming matches */}
         <div>
-          <h2 style={{ fontSize: 18, marginBottom: 16 }}>📅 Upcoming Matches</h2>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+            <div style={{ width: 4, height: 22, background: "#378ADD", borderRadius: 2 }} />
+            <h2 style={{ margin: 0, fontSize: 18 }}>📅 Upcoming Matches</h2>
+          </div>
           {upcoming.length === 0
             ? <p style={{ color: "#555" }}>No upcoming matches scheduled.</p>
             : upcoming.map((m) => <MatchCard key={m.match_id} match={m} />)}

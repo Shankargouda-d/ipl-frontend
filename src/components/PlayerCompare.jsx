@@ -334,9 +334,38 @@ export default function PlayerCompare() {
           <div style={{ marginTop: 28, background: "#0d0d0d", border: "1px solid #1f1f1f", borderRadius: 16, padding: "28px 24px" }}>
             {/* Header with player names */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }}>
-              <span style={{ color: c1, fontWeight: 800, fontSize: 15 }}>{p1.player_name}</span>
+              {/* Avatar silhouettes */}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                <svg width="64" height="80" viewBox="0 0 64 80" xmlns="http://www.w3.org/2000/svg">
+                  {/* Head */}
+                  <circle cx="32" cy="12" r="10" fill={`color-mix(in srgb, ${c1} 55%, white)`} />
+                  {/* Body */}
+                  <path d="M18 42 Q18 28 32 26 Q46 28 46 42 L44 60 Q38 64 32 64 Q26 64 20 60 Z" fill={`color-mix(in srgb, ${c1} 55%, white)`} />
+                  {/* Left arm folded */}
+                  <path d="M18 36 Q10 38 12 46 Q16 48 20 44 Q20 40 22 38 Z" fill={`color-mix(in srgb, ${c1} 55%, white)`} />
+                  {/* Right arm folded */}
+                  <path d="M46 36 Q54 38 52 46 Q48 48 44 44 Q44 40 42 38 Z" fill={`color-mix(in srgb, ${c1} 55%, white)`} />
+                  {/* Folded hands */}
+                  <ellipse cx="32" cy="44" rx="10" ry="5" fill={`color-mix(in srgb, ${c1} 40%, white)`} />
+                  {/* Legs */}
+                  <path d="M26 62 Q24 72 22 78" stroke={`color-mix(in srgb, ${c1} 55%, white)`} strokeWidth="7" strokeLinecap="round" fill="none" />
+                  <path d="M38 62 Q40 72 42 78" stroke={`color-mix(in srgb, ${c1} 55%, white)`} strokeWidth="7" strokeLinecap="round" fill="none" />
+                </svg>
+                <span style={{ color: c1, fontWeight: 800, fontSize: 15 }}>{p1.player_name}</span>
+              </div>
               <h3 style={{ margin: 0, fontSize: 15, color: "#aaa", letterSpacing: 0.5 }}>📊 Visual Comparison</h3>
-              <span style={{ color: c2, fontWeight: 800, fontSize: 15 }}>{p2.player_name}</span>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                <svg width="64" height="80" viewBox="0 0 64 80" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="32" cy="12" r="10" fill={`color-mix(in srgb, ${c2} 55%, white)`} />
+                  <path d="M18 42 Q18 28 32 26 Q46 28 46 42 L44 60 Q38 64 32 64 Q26 64 20 60 Z" fill={`color-mix(in srgb, ${c2} 55%, white)`} />
+                  <path d="M18 36 Q10 38 12 46 Q16 48 20 44 Q20 40 22 38 Z" fill={`color-mix(in srgb, ${c2} 55%, white)`} />
+                  <path d="M46 36 Q54 38 52 46 Q48 48 44 44 Q44 40 42 38 Z" fill={`color-mix(in srgb, ${c2} 55%, white)`} />
+                  <ellipse cx="32" cy="44" rx="10" ry="5" fill={`color-mix(in srgb, ${c2} 40%, white)`} />
+                  <path d="M26 62 Q24 72 22 78" stroke={`color-mix(in srgb, ${c2} 55%, white)`} strokeWidth="7" strokeLinecap="round" fill="none" />
+                  <path d="M38 62 Q40 72 42 78" stroke={`color-mix(in srgb, ${c2} 55%, white)`} strokeWidth="7" strokeLinecap="round" fill="none" />
+                </svg>
+                <span style={{ color: c2, fontWeight: 800, fontSize: 15 }}>{p2.player_name}</span>
+              </div>
             </div>
 
             {/* Stat Bars */}

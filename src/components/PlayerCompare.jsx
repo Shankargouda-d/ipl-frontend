@@ -336,17 +336,19 @@ export default function PlayerCompare() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }}>
               {/* Player 1 avatar */}
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-                <div style={{ position: "relative", width: 110, height: 130 }}>
-                  <img src="/cricket_avatar.png" alt={p1.player_name}
-                    style={{ width: "100%", height: "100%", objectFit: "contain" }} />
-                  {/* Team color overlay — tints the red jersey to team color */}
+                <div style={{ position: "relative", width: 120, height: 140 }}>
+                  {/* Glow circle behind avatar */}
                   <div style={{
                     position: "absolute", inset: 0,
-                    background: c1,
-                    mixBlendMode: "hue",
-                    borderRadius: 8,
-                    opacity: 0.85,
-                    pointerEvents: "none",
+                    borderRadius: "50%",
+                    background: `radial-gradient(circle at 50% 60%, ${c1}55 0%, ${c1}11 60%, transparent 80%)`,
+                  }} />
+                  <img src="/cricket_avatar.png" alt={p1.player_name}
+                    style={{ width: "100%", height: "100%", objectFit: "contain", mixBlendMode: "multiply", position: "relative", zIndex: 1 }} />
+                  {/* Team color hue overlay */}
+                  <div style={{
+                    position: "absolute", inset: 0, zIndex: 2,
+                    background: c1, mixBlendMode: "hue", opacity: 0.88, pointerEvents: "none",
                   }} />
                 </div>
                 <span style={{ color: c1, fontWeight: 800, fontSize: 15 }}>{p1.player_name}</span>
@@ -357,16 +359,18 @@ export default function PlayerCompare() {
 
               {/* Player 2 avatar */}
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-                <div style={{ position: "relative", width: 110, height: 130 }}>
-                  <img src="/cricket_avatar.png" alt={p2.player_name}
-                    style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                <div style={{ position: "relative", width: 120, height: 140 }}>
+                  {/* Glow circle behind avatar */}
                   <div style={{
                     position: "absolute", inset: 0,
-                    background: c2,
-                    mixBlendMode: "hue",
-                    borderRadius: 8,
-                    opacity: 0.85,
-                    pointerEvents: "none",
+                    borderRadius: "50%",
+                    background: `radial-gradient(circle at 50% 60%, ${c2}55 0%, ${c2}11 60%, transparent 80%)`,
+                  }} />
+                  <img src="/cricket_avatar.png" alt={p2.player_name}
+                    style={{ width: "100%", height: "100%", objectFit: "contain", mixBlendMode: "multiply", position: "relative", zIndex: 1 }} />
+                  <div style={{
+                    position: "absolute", inset: 0, zIndex: 2,
+                    background: c2, mixBlendMode: "hue", opacity: 0.88, pointerEvents: "none",
                   }} />
                 </div>
                 <span style={{ color: c2, fontWeight: 800, fontSize: 15 }}>{p2.player_name}</span>

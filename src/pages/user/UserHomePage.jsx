@@ -150,11 +150,11 @@ export default function UserHomePage() {
       }}>
         <div style={{
           position: "absolute", inset: 0,
-          background: "linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.4) 30%, rgba(10,10,10,0.85) 70%, #0a0a0a 100%)",
+          background: "linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(10,10,10,0.85) 70%, #0a0a0a 100%)",
           zIndex: 0,
         }} />
         <div style={{ position: "relative", zIndex: 1 }}>
-          <img src="/ipl_logo.png" alt="TATA IPL 2026" style={{ width: 140, height: 140, objectFit: "contain", marginBottom: 10, mixBlendMode: "screen" }} />
+          <div style={{ fontSize: 60, marginBottom: 10, filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.8))" }}>🏏</div>
           <h1 style={{ fontSize: 42, fontWeight: 900, margin: "0 0 10px", textShadow: "0 2px 20px rgba(0,0,0,0.9)", letterSpacing: "-0.5px" }}>
             TATA IPL 2026
           </h1>

@@ -617,11 +617,16 @@ export default function ScorecardPage() {
 
   const completeMatch = async () => {
   if (!potmPlayerId) {
-    setMsg("❌ Please select Player of the Match before completing.");
+    setMsg("❌ Please select Player of the Match (or choose 'None' for abandoned match).");
     return;
   }
 
-  if (!window.confirm("Mark COMPLETED? Stats and points table will auto-update.")) {
+  const isAbandoned = potmPlayerId === "none";
+  const confirmMsg = isAbandoned
+    ? "Mark as COMPLETED with No Result (Abandoned)? Both teams get 1 point."
+    : "Mark COMPLETED? Stats and points table will auto-update.";
+
+  if (!window.confirm(confirmMsg)) {
     return;
   }
 
@@ -631,10 +636,12 @@ export default function ScorecardPage() {
   try {
     const res = await http.post("/results/complete", {
       match_id: id,
-      player_of_match_id: potmPlayerId,
+      player_of_match_id: isAbandoned ? null : potmPlayerId,
+      abandoned: isAbandoned,
     });
 
-    alert(`Match Complete!\n${res.data.result_text}\nPOTM: ${potmPlayerId}`);
+    const potmLabel = isAbandoned ? "No POTM (Abandoned)" : potmPlayerId;
+    alert(`Match Complete!\n${res.data.result_text}\nPOTM: ${potmLabel}`);
     navigate("/admin/dashboard");
   } catch (err) {
     setMsg(
@@ -763,6 +770,7 @@ export default function ScorecardPage() {
               style={{ ...ci, minWidth: 240, padding: "8px 12px", fontSize: 14 }}
             >
               <option value="">— Select player —</option>
+              <option value="none">🌧️ None (Rain / Abandoned / No Result)</option>
               <optgroup label={match.team1_name}>
                 {allPlayers
                   .filter((p) => p.team_id === match.team1_id)
@@ -782,6 +790,11 @@ export default function ScorecardPage() {
                   ))}
               </optgroup>
             </select>
+            {potmPlayerId === "none" && (
+              <p style={{ color: "#EF9F27", fontSize: 12, marginTop: 6 }}>
+                ⚠️ No POTM — both teams will receive 1 point each (No Result).
+              </p>
+            )}
           </div>
 
           <div style={{ textAlign: "center" }}>
@@ -791,16 +804,16 @@ export default function ScorecardPage() {
               style={{
                 padding: "14px 36px", borderRadius: 10, border: "none",
                 fontSize: 16, fontWeight: 700,
-                background: potmPlayerId ? "#639922" : "#2a2a2a",
+                background: potmPlayerId ? (potmPlayerId === "none" ? "#5a7d2a" : "#639922") : "#2a2a2a",
                 color: potmPlayerId ? "#fff" : "#555",
                 cursor: potmPlayerId ? "pointer" : "not-allowed",
               }}
             >
-              {completing ? "Processing..." : "✅ Mark Match as Completed"}
+              {completing ? "Processing..." : potmPlayerId === "none" ? "🌧️ Mark as No Result" : "✅ Mark Match as Completed"}
             </button>
             {!potmPlayerId && (
               <p style={{ color: "#666", fontSize: 12, marginTop: 8 }}>
-                Select Player of the Match to enable this button
+                Select Player of the Match (or None for abandoned) to enable this button
               </p>
             )}
           </div>

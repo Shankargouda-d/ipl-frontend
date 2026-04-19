@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import http from "../../api/http";
+import { getTeamColor } from "../../utils/teamColors";
 
 function Navbar() {
   return (
@@ -43,24 +44,31 @@ export default function UserPointsTablePage() {
                 </tr>
               </thead>
               <tbody>
-                {points.map((t, i) => (
-                  <tr key={t.team_id} style={{ borderBottom: "1px solid #111", background: i < 4 ? "#0a1a0a" : "transparent" }}>
-                    <td style={{ padding: "12px 16px", color: i < 4 ? "#639922" : "#888", fontWeight: 700 }}>{i + 1}</td>
-                    <td style={{ padding: "12px 16px", fontWeight: 600 }}>
-                      {i < 4 && <span style={{ color: "#639922", marginRight: 6, fontSize: 10 }}>●</span>}
-                      {t.team_name}
-                      <span style={{ color: "#555", fontSize: 11, marginLeft: 6 }}>({t.short_name})</span>
-                    </td>
-                    <td style={{ padding: "12px 16px" }}>{t.played}</td>
-                    <td style={{ padding: "12px 16px", color: "#639922", fontWeight: 600 }}>{t.won}</td>
-                    <td style={{ padding: "12px 16px", color: "#e24b4a" }}>{t.lost}</td>
-                    <td style={{ padding: "12px 16px" }}>{t.tied}</td>
-                    <td style={{ padding: "12px 16px", fontWeight: 700, fontSize: 16 }}>{t.points}</td>
-                    <td style={{ padding: "12px 16px", color: t.nrr >= 0 ? "#639922" : "#e24b4a", fontWeight: 600 }}>
-                      {t.nrr >= 0 ? "+" : ""}{parseFloat(t.nrr).toFixed(3)}
-                    </td>
-                  </tr>
-                ))}
+                {points.map((t, i) => {
+                  const tc = getTeamColor(t.short_name || t.team_name);
+                  return (
+                    <tr key={t.team_id} style={{
+                      borderBottom: "1px solid #111",
+                      background: `${tc}14`,
+                      borderLeft: `4px solid ${tc}`,
+                    }}>
+                      <td style={{ padding: "12px 16px", color: i < 4 ? "#639922" : "#888", fontWeight: 700 }}>{i + 1}</td>
+                      <td style={{ padding: "12px 16px", fontWeight: 600 }}>
+                        {i < 4 && <span style={{ color: "#639922", marginRight: 6, fontSize: 10 }}>●</span>}
+                        {t.team_name}
+                        <span style={{ color: tc, fontSize: 11, marginLeft: 6, fontWeight: 700 }}>({t.short_name})</span>
+                      </td>
+                      <td style={{ padding: "12px 16px" }}>{t.played}</td>
+                      <td style={{ padding: "12px 16px", color: "#639922", fontWeight: 600 }}>{t.won}</td>
+                      <td style={{ padding: "12px 16px", color: "#e24b4a" }}>{t.lost}</td>
+                      <td style={{ padding: "12px 16px" }}>{t.tied}</td>
+                      <td style={{ padding: "12px 16px", fontWeight: 700, fontSize: 16 }}>{t.points}</td>
+                      <td style={{ padding: "12px 16px", color: t.nrr >= 0 ? "#639922" : "#e24b4a", fontWeight: 600 }}>
+                        {t.nrr >= 0 ? "+" : ""}{parseFloat(t.nrr).toFixed(3)}
+                      </td>
+                    </tr>
+                  );
+                })}
                 {points.length === 0 && (
                   <tr>
                     <td colSpan={8} style={{ padding: 32, textAlign: "center", color: "#555" }}>

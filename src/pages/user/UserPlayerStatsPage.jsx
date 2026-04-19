@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import http from "../../api/http";
 import PlayerCompare from "../../components/PlayerCompare";
+import { getTeamColor } from "../../utils/teamColors";
 
 const TABS = [
   { key: "orange", label: "Orange Cap" },
@@ -44,28 +45,29 @@ export default function UserPlayerStatsPage() {
 
         {loading && <p style={{ color: "#666" }}>Loading...</p>}
 
-        {/* Orange Cap */}
+        {/* Orange Cap — removed 50s & 100s columns */}
         {tab === "orange" && !loading && (
           <LeaderboardCard title="🟠 Orange Cap — Most Runs" color="#d85a30">
             <table style={tableStyle}>
-              <thead><tr>{["#","Player","Team","M","Runs","4s","6s","50s","100s","HS","Avg"].map((h) => <th key={h} style={thS}>{h}</th>)}</tr></thead>
+              <thead><tr>{["#","Player","Team","M","Runs","4s","6s","HS","Avg"].map((h) => <th key={h} style={thS}>{h}</th>)}</tr></thead>
               <tbody>
-                {data.map((p, i) => (
-                  <tr key={p.player_id} style={{ background: i === 0 ? "#1e1200" : "transparent" }}>
-                    <td style={tdS}>{i === 0 ? "🟠" : i + 1}</td>
-                    <td style={{ ...tdS, fontWeight: 600 }}>{p.player_name}</td>
-                    <td style={tdS}><TeamBadge name={p.short_name} /></td>
-                    <td style={tdS}>{p.matches_played}</td>
-                    <td style={{ ...tdS, fontWeight: 700, color: "#d85a30", fontSize: 16 }}>{p.total_runs}</td>
-                    <td style={tdS}>{p.total_fours}</td>
-                    <td style={tdS}>{p.total_sixes}</td>
-                    <td style={tdS}>{p.fifties}</td>
-                    <td style={tdS}>{p.hundreds}</td>
-                    <td style={tdS}>{p.highest_score}</td>
-                    <td style={tdS}>{p.batting_avg}</td>
-                  </tr>
-                ))}
-                {data.length === 0 && <tr><td colSpan={11} style={{ ...tdS, color: "#555", textAlign: "center", padding: 32 }}>No data yet</td></tr>}
+                {data.map((p, i) => {
+                  const tc = getTeamColor(p.short_name);
+                  return (
+                    <tr key={p.player_id} style={{ borderBottom: "1px solid #111", background: `${tc}18`, borderLeft: `3px solid ${tc}` }}>
+                      <td style={tdS}>{i === 0 ? "🟠" : i + 1}</td>
+                      <td style={{ ...tdS, fontWeight: 600 }}>{p.player_name}</td>
+                      <td style={tdS}><TeamBadge name={p.short_name} color={tc} /></td>
+                      <td style={tdS}>{p.matches_played}</td>
+                      <td style={{ ...tdS, fontWeight: 700, color: "#d85a30", fontSize: 16 }}>{p.total_runs}</td>
+                      <td style={tdS}>{p.total_fours}</td>
+                      <td style={tdS}>{p.total_sixes}</td>
+                      <td style={tdS}>{p.highest_score}</td>
+                      <td style={tdS}>{p.batting_avg}</td>
+                    </tr>
+                  );
+                })}
+                {data.length === 0 && <tr><td colSpan={9} style={{ ...tdS, color: "#555", textAlign: "center", padding: 32 }}>No data yet</td></tr>}
               </tbody>
             </table>
           </LeaderboardCard>
@@ -77,19 +79,22 @@ export default function UserPlayerStatsPage() {
             <table style={tableStyle}>
               <thead><tr>{["#","Player","Team","M","Wkts","Overs","Runs","Econ","Avg"].map((h) => <th key={h} style={thS}>{h}</th>)}</tr></thead>
               <tbody>
-                {data.map((p, i) => (
-                  <tr key={p.player_id} style={{ background: i === 0 ? "#12001e" : "transparent" }}>
-                    <td style={tdS}>{i === 0 ? "🟣" : i + 1}</td>
-                    <td style={{ ...tdS, fontWeight: 600 }}>{p.player_name}</td>
-                    <td style={tdS}><TeamBadge name={p.short_name} /></td>
-                    <td style={tdS}>{p.matches_played}</td>
-                    <td style={{ ...tdS, fontWeight: 700, color: "#7F77DD", fontSize: 16 }}>{p.total_wickets}</td>
-                    <td style={tdS}>{p.total_overs}</td>
-                    <td style={tdS}>{p.runs_conceded}</td>
-                    <td style={tdS}>{p.economy}</td>
-                    <td style={tdS}>{p.bowling_avg}</td>
-                  </tr>
-                ))}
+                {data.map((p, i) => {
+                  const tc = getTeamColor(p.short_name);
+                  return (
+                    <tr key={p.player_id} style={{ borderBottom: "1px solid #111", background: `${tc}18`, borderLeft: `3px solid ${tc}` }}>
+                      <td style={tdS}>{i === 0 ? "🟣" : i + 1}</td>
+                      <td style={{ ...tdS, fontWeight: 600 }}>{p.player_name}</td>
+                      <td style={tdS}><TeamBadge name={p.short_name} color={tc} /></td>
+                      <td style={tdS}>{p.matches_played}</td>
+                      <td style={{ ...tdS, fontWeight: 700, color: "#7F77DD", fontSize: 16 }}>{p.total_wickets}</td>
+                      <td style={tdS}>{p.total_overs}</td>
+                      <td style={tdS}>{p.runs_conceded}</td>
+                      <td style={tdS}>{p.economy}</td>
+                      <td style={tdS}>{p.bowling_avg}</td>
+                    </tr>
+                  );
+                })}
                 {data.length === 0 && <tr><td colSpan={9} style={{ ...tdS, color: "#555", textAlign: "center", padding: 32 }}>No data yet</td></tr>}
               </tbody>
             </table>
@@ -99,25 +104,25 @@ export default function UserPlayerStatsPage() {
         {/* 100s */}
         {tab === "hundreds" && !loading && (
           <LeaderboardCard title="💯 Most Centuries" color="#EF9F27">
-            <SimpleStatTable data={data} mainKey="hundreds" mainLabel="100s" color="#EF9F27" />
+            <SimpleStatTable data={data} mainKey="hundreds" mainLabel="100s" color="#EF9F27" showRuns showAvg />
           </LeaderboardCard>
         )}
 
-        {/* 50s */}
+        {/* 50s — show M, remove nothing */}
         {tab === "fifties" && !loading && (
           <LeaderboardCard title="50+ Most Half Centuries" color="#5DCAA5">
-            <SimpleStatTable data={data} mainKey="fifties" mainLabel="50s" color="#5DCAA5" />
+            <SimpleStatTable data={data} mainKey="fifties" mainLabel="50s" color="#5DCAA5" showRuns showAvg />
           </LeaderboardCard>
         )}
 
-        {/* Sixes */}
+        {/* Sixes — show M, no Runs/Avg */}
         {tab === "sixes" && !loading && (
           <LeaderboardCard title="💥 Most Sixes" color="#D4537E">
-            <SimpleStatTable data={data} mainKey="total_sixes" mainLabel="6s" color="#D4537E" />
+            <SimpleStatTable data={data} mainKey="total_sixes" mainLabel="6s" color="#D4537E" showRuns={false} showAvg={false} />
           </LeaderboardCard>
         )}
 
-        {/* Compare — now in its own component */}
+        {/* Compare */}
         {tab === "compare" && <PlayerCompare />}
       </div>
     </div>
@@ -136,30 +141,43 @@ function LeaderboardCard({ title, color, children }) {
   );
 }
 
-function SimpleStatTable({ data, mainKey, mainLabel, color }) {
+function SimpleStatTable({ data, mainKey, mainLabel, color, showRuns = true, showAvg = true }) {
+  const headers = ["#", "Player", "Team", "M", mainLabel, ...(showRuns ? ["Runs"] : []), ...(showAvg ? ["Avg"] : [])];
   return (
     <table style={tableStyle}>
-      <thead><tr>{["#", "Player", "Team", "M", mainLabel, "Runs", "Avg"].map((h) => <th key={h} style={thS}>{h}</th>)}</tr></thead>
+      <thead><tr>{headers.map((h) => <th key={h} style={thS}>{h}</th>)}</tr></thead>
       <tbody>
-        {data.map((p, i) => (
-          <tr key={p.player_id}>
-            <td style={tdS}>{i + 1}</td>
-            <td style={{ ...tdS, fontWeight: 600 }}>{p.player_name}</td>
-            <td style={tdS}><TeamBadge name={p.short_name} /></td>
-            <td style={tdS}>{p.matches_played}</td>
-            <td style={{ ...tdS, fontWeight: 700, color, fontSize: 16 }}>{p[mainKey]}</td>
-            <td style={tdS}>{p.total_runs}</td>
-            <td style={tdS}>{p.batting_avg}</td>
-          </tr>
-        ))}
-        {data.length === 0 && <tr><td colSpan={7} style={{ ...tdS, color: "#555", textAlign: "center", padding: 32 }}>No data yet</td></tr>}
+        {data.map((p, i) => {
+          const tc = getTeamColor(p.short_name);
+          return (
+            <tr key={p.player_id} style={{ borderBottom: "1px solid #111", background: `${tc}18`, borderLeft: `3px solid ${tc}` }}>
+              <td style={tdS}>{i + 1}</td>
+              <td style={{ ...tdS, fontWeight: 600 }}>{p.player_name}</td>
+              <td style={tdS}><TeamBadge name={p.short_name} color={tc} /></td>
+              <td style={tdS}>{p.matches_played}</td>
+              <td style={{ ...tdS, fontWeight: 700, color, fontSize: 16 }}>{p[mainKey]}</td>
+              {showRuns && <td style={tdS}>{p.total_runs}</td>}
+              {showAvg && <td style={tdS}>{p.batting_avg}</td>}
+            </tr>
+          );
+        })}
+        {data.length === 0 && <tr><td colSpan={headers.length} style={{ ...tdS, color: "#555", textAlign: "center", padding: 32 }}>No data yet</td></tr>}
       </tbody>
     </table>
   );
 }
 
-function TeamBadge({ name }) {
-  return <span style={{ background: "#2a2a2a", padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600, color: "#ccc" }}>{name}</span>;
+function TeamBadge({ name, color }) {
+  return (
+    <span style={{
+      background: color ? `${color}33` : "#2a2a2a",
+      border: color ? `1px solid ${color}66` : "none",
+      padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 700,
+      color: color || "#ccc"
+    }}>
+      {name}
+    </span>
+  );
 }
 
 function Navbar() {
@@ -176,4 +194,3 @@ function Navbar() {
 const tableStyle = { width: "100%", borderCollapse: "collapse", fontSize: 13 };
 const thS = { padding: "10px 14px", textAlign: "left", color: "#666", fontWeight: 600, fontSize: 11, borderBottom: "1px solid #2a2a2a", whiteSpace: "nowrap" };
 const tdS = { padding: "10px 14px", borderBottom: "1px solid #111", whiteSpace: "nowrap" };
-const selStyle = { padding: "10px 14px", borderRadius: 8, background: "#111", border: "1px solid #333", color: "#fff", fontSize: 14, outline: "none", minWidth: 200 };

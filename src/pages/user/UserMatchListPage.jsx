@@ -10,7 +10,7 @@ function Navbar() {
       alignItems: "center", flexWrap: "wrap" }}>
       <Link to="/" style={{ color: "#d85a30", fontWeight: 700,
         textDecoration: "none", fontSize: 18 }}>🏏 IPL</Link>
-      {[["Matches", "/matches"], ["Stats", "/stats"], ["Points", "/points"]].map(([l, h]) => (
+      {[["Matches", "/matches"], ["Stats", "/stats"], ["Team Stats", "/team-stats"], ["Points", "/points"]].map(([l, h]) => (
         <Link key={l} to={h} style={{ color: "#888", textDecoration: "none", fontSize: 14 }}>{l}</Link>
       ))}
       <div style={{ marginLeft: "auto" }}>

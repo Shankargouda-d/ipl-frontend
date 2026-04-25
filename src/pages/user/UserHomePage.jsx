@@ -7,7 +7,8 @@ function Navbar() {
   return (
     <nav style={{ background: "#111", borderBottom: "1px solid #1a1a1a", padding: "14px 24px", display: "flex", gap: 24, alignItems: "center", flexWrap: "wrap" }}>
       <Link to="/" style={{ color: "#d85a30", fontWeight: 700, textDecoration: "none", fontSize: 18 }}>🏏 IPL</Link>
-      {[["Matches", "/matches"], ["Stats", "/stats"], ["Points", "/points"]].map(([l, h]) => (
+      {/* Matches link, Stats link, Team Stats link, Points link */}
+      {[["Matches", "/matches"], ["Stats", "/stats"], ["Team Stats", "/team-stats"], ["Points", "/points"]].map(([l, h]) => (
         <Link key={l} to={h} style={{ color: "#888", textDecoration: "none", fontSize: 14 }}>{l}</Link>
       ))}
       <div style={{ marginLeft: "auto" }}>
@@ -164,6 +165,7 @@ export default function UserHomePage() {
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
             <Link to="/matches" style={{ padding: "13px 28px", borderRadius: 10, background: "#d85a30", color: "#fff", textDecoration: "none", fontWeight: 700, fontSize: 15, boxShadow: "0 4px 20px rgba(216,90,48,0.45)" }}>View All Matches</Link>
             <Link to="/stats" style={{ padding: "13px 28px", borderRadius: 10, background: "rgba(255,255,255,0.1)", backdropFilter: "blur(8px)", color: "#fff", textDecoration: "none", fontWeight: 600, fontSize: 15, border: "1px solid rgba(255,255,255,0.2)" }}>Player Stats</Link>
+            <Link to="/team-stats" style={{ padding: "13px 28px", borderRadius: 10, background: "rgba(255,255,255,0.1)", backdropFilter: "blur(8px)", color: "#fff", textDecoration: "none", fontWeight: 600, fontSize: 15, border: "1px solid rgba(255,255,255,0.2)" }}>Team Stats</Link>
             <Link to="/points" style={{ padding: "13px 28px", borderRadius: 10, background: "rgba(255,255,255,0.1)", backdropFilter: "blur(8px)", color: "#fff", textDecoration: "none", fontWeight: 600, fontSize: 15, border: "1px solid rgba(255,255,255,0.2)" }}>Points Table</Link>
           </div>
         </div>

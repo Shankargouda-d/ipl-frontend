@@ -31,6 +31,7 @@ function Navbar() {
       {[
         ["Matches", "/matches"],
         ["Stats", "/stats"],
+        ["Team Stats", "/team-stats"],
         ["Points", "/points"],
       ].map(([label, href]) => (
         <Link

@@ -10,6 +10,8 @@ import UserMatchListPage from "./pages/user/UserMatchListPage";
 import UserMatchDetailsPage from "./pages/user/UserMatchDetailsPage";
 import UserPlayerStatsPage from "./pages/user/UserPlayerStatsPage";
 import UserPointsTablePage from "./pages/user/UserPointsTablePage";
+import UserTeamStatsPage from "./pages/user/UserTeamStatsPage";
+
 
 function AdminProtected({ children }) {
   const isAdmin = sessionStorage.getItem("ipl_admin") === "true";
@@ -24,6 +26,8 @@ export default function App() {
       <Route path="/matches/:id" element={<UserMatchDetailsPage />} />
       <Route path="/stats" element={<UserPlayerStatsPage />} />
       <Route path="/points" element={<UserPointsTablePage />} />
+      <Route path="/team-stats" element={<UserTeamStatsPage />} />
+
 
       <Route path="/admin" element={<AdminGate />} />
       <Route

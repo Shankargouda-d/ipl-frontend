@@ -62,12 +62,14 @@ const thS = {
   fontWeight: 600,
   borderBottom: "1px solid #2a2a2a",
   whiteSpace: "nowrap",
+  background: "#111",
 };
 
 const tdS = {
   padding: "10px 14px",
   borderBottom: "1px solid #111",
   whiteSpace: "nowrap",
+  background: "inherit",
 };
 
 function calcSR(runs, balls) {
@@ -367,7 +369,7 @@ export default function UserMatchDetailsPage() {
               </thead>
               <tbody>
                 {playedBatters.map((b, index) => (
-                  <tr key={b.id || b.player_id || index}>
+                  <tr key={b.id || b.player_id || index} style={{ background: "#111" }}>
                     <td style={tdS}>{b.batting_order || "-"}</td>
                     <td style={tdS}>
                       <div>{b.player_name}</div>
@@ -405,7 +407,7 @@ export default function UserMatchDetailsPage() {
               </thead>
               <tbody>
                 {bowlRows.map((b, index) => (
-                  <tr key={b.id || b.player_id || index}>
+                  <tr key={b.id || b.player_id || index} style={{ background: "#111" }}>
                     <td style={tdS}>{b.player_name}</td>
                     <td style={tdS}>{b.overs}</td>
                     <td style={tdS}>{b.runs_conceded}</td>

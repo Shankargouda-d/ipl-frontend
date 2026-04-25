@@ -233,9 +233,39 @@ export default function MatchSetupPage() {
                 ))}
               </div>
             </div>
-            <button onClick={saveToss} disabled={saving} style={primaryBtn}>
-              {saving ? "Saving..." : "Save Toss & Continue →"}
-            </button>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <button onClick={saveToss} disabled={saving} style={primaryBtn}>
+                {saving ? "Saving..." : "Save Toss & Continue →"}
+              </button>
+              <button 
+                onClick={async () => {
+                  if (window.confirm("Are you sure you want to abandon this match? Both teams will get 1 point.")) {
+                    setSaving(true);
+                    try {
+                      await http.post("/results/abandon", { match_id: id });
+                      setMsg("Match abandoned successfully");
+                      setTimeout(() => navigate("/admin/dashboard"), 1500);
+                    } catch {
+                      setMsg("Error abandoning match");
+                      setSaving(false);
+                    }
+                  }
+                }} 
+                disabled={saving} 
+                style={{
+                  padding: "12px 28px",
+                  borderRadius: 8,
+                  background: "transparent",
+                  color: "#e24b4a",
+                  border: "1px solid #e24b4a",
+                  fontSize: 15,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Mark as Abandoned / No Result
+              </button>
+            </div>
           </div>
         )}
 

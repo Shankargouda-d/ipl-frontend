@@ -359,3 +359,13 @@ const chartCardStyle = {
   padding: '24px',
   boxShadow: '0 10px 30px rgba(0,0,0,0.3)'
 };
+
+const chartTitleStyle = {
+  marginTop: 0,
+  marginBottom: '20px',
+  fontSize: '15px',
+  color: '#aaa',
+  textAlign: 'center',
+  fontWeight: 600,
+  letterSpacing: '0.5px'
+};

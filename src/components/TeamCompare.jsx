@@ -65,21 +65,29 @@ export default function TeamCompare() {
     { name: '6s', value: Number(team2Data.total_sixes || 0) * 6, fill: team2Color }
   ];
 
-  // Match-by-Match Data Processing
-  const team1Matches = matchComparison.filter(m => String(m.team_id) === String(team1Id));
-  const team2Matches = matchComparison.filter(m => String(m.team_id) === String(team2Id));
-  
-  const timelineData = [];
-  const maxMatches = Math.max(team1Matches.length, team2Matches.length);
-  for (let i = 0; i < maxMatches; i++) {
-    timelineData.push({
-      name: `M${i + 1}`,
-      [team1?.short_name]: team1Matches[i]?.runs || null,
-      [team2?.short_name]: team2Matches[i]?.runs || null,
-      [`${team1?.short_name} W`]: team1Matches[i]?.wickets_taken || 0,
-      [`${team2?.short_name} W`]: team2Matches[i]?.wickets_taken || 0,
-    });
-  }
+  // Match-by-Match Data Processing — align by actual match_number
+  const matchNumbersSet = new Set();
+  const team1ByMatch = {};
+  const team2ByMatch = {};
+
+  matchComparison.forEach(m => {
+    matchNumbersSet.add(m.match_number);
+    if (String(m.team_id) === String(team1Id)) {
+      team1ByMatch[m.match_number] = m;
+    } else if (String(m.team_id) === String(team2Id)) {
+      team2ByMatch[m.match_number] = m;
+    }
+  });
+
+  const sortedMatchNumbers = [...matchNumbersSet].sort((a, b) => a - b);
+
+  const timelineData = sortedMatchNumbers.map(mn => ({
+    name: `M${mn}`,
+    [team1?.short_name]: team1ByMatch[mn]?.runs || null,
+    [team2?.short_name]: team2ByMatch[mn]?.runs || null,
+    [`${team1?.short_name} W`]: team1ByMatch[mn]?.wickets_taken || 0,
+    [`${team2?.short_name} W`]: team2ByMatch[mn]?.wickets_taken || 0,
+  }));
 
   // Custom Stat Row for aggregate data
   const StatRow = ({ label, key1, icon: Icon, isHigherBetter = true }) => {

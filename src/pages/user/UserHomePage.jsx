@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import http from "../../api/http";
 import { getTeamColor } from "../../utils/teamColors";
+import MatchPrediction from "../../components/MatchPrediction";
 
 function Navbar() {
   return (
@@ -236,7 +237,12 @@ export default function UserHomePage() {
           </div>
           {upcoming.length === 0
             ? <p style={{ color: "#555" }}>No upcoming matches scheduled.</p>
-            : upcoming.map((m) => <MatchCard key={m.match_id} match={m} />)}
+            : upcoming.map((m) => (
+                <div key={m.match_id}>
+                  <MatchCard match={m} />
+                  <MatchPrediction match={m} />
+                </div>
+              ))}
           <Link to="/matches" style={{ color: "#d85a30", fontSize: 14, textDecoration: "none" }}>View all matches →</Link>
         </div>
       </div>

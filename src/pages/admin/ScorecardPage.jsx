@@ -165,7 +165,7 @@ function BattingTable({
                     ))}
                     style={ci}
                   >
-                    {["not out", "bowled", "caught", "lbw", "run out", "stumped", "hit wicket", "did not bat"].map((d) => (
+                    {["not out", "bowled", "caught", "lbw", "run out", "stumped", "hit wicket", "retired hurt", "did not bat"].map((d) => (
                       <option key={d}>{d}</option>
                     ))}
                   </select>

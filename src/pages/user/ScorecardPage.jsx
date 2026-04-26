@@ -68,7 +68,7 @@ function BattingTable({ rows, setRows, overs, setOvers, extras,
                     style={ci}
                   >
                     {["not out", "bowled", "caught", "lbw",
-                      "run out", "stumped", "hit wicket"].map((d) => (
+                      "run out", "stumped", "hit wicket", "retired hurt"].map((d) => (
                       <option key={d}>{d}</option>
                     ))}
                   </select>

@@ -3,8 +3,7 @@ import http from '../api/http';
 import { getTeamColor } from '../utils/teamColors';
 import { Users, Target, Zap, Shield, Trophy } from 'lucide-react';
 import { 
-  PieChart, Pie, Cell, LineChart, Line, BarChart, Bar, 
-  XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid 
+  PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer 
 } from 'recharts';
 
 export default function TeamCompare() {
@@ -12,7 +11,6 @@ export default function TeamCompare() {
   const [team1Id, setTeam1Id] = useState('');
   const [team2Id, setTeam2Id] = useState('');
   const [comparison, setComparison] = useState(null);
-  const [matchComparison, setMatchComparison] = useState([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -22,20 +20,16 @@ export default function TeamCompare() {
   useEffect(() => {
     if (team1Id && team2Id) {
       setLoading(true);
-      Promise.all([
-        http.get(`/stats/team-compare?team1=${team1Id}&team2=${team2Id}`),
-        http.get(`/stats/team-compare-matches?team1=${team1Id}&team2=${team2Id}`)
-      ]).then(([compRes, matchRes]) => {
-        setComparison(compRes.data);
-        setMatchComparison(matchRes.data);
-        setLoading(false);
-      }).catch(e => {
-        console.error(e);
-        setLoading(false);
-      });
+      http.get(`/stats/team-compare?team1=${team1Id}&team2=${team2Id}`)
+        .then(res => {
+          setComparison(res.data);
+          setLoading(false);
+        }).catch(e => {
+          console.error(e);
+          setLoading(false);
+        });
     } else {
       setComparison(null);
-      setMatchComparison([]);
     }
   }, [team1Id, team2Id]);
 
@@ -49,45 +43,36 @@ export default function TeamCompare() {
   const team1Data = comparison?.find(t => String(t.team_id) === String(team1Id)) || {};
   const team2Data = comparison?.find(t => String(t.team_id) === String(team2Id)) || {};
 
-  // Donut Chart Data (Runs Share)
-  const runShareData = [
-    { name: team1?.short_name, value: Number(team1Data.total_runs || 0), color: team1Color },
-    { name: team2?.short_name, value: Number(team2Data.total_runs || 0), color: team2Color }
+  // 4s Comparison (percentage pie: team1 vs team2)
+  const t1Fours = Number(team1Data.total_fours || 0);
+  const t2Fours = Number(team2Data.total_fours || 0);
+  const foursData = [
+    { name: team1?.short_name, value: t1Fours, color: team1Color },
+    { name: team2?.short_name, value: t2Fours, color: team2Color }
   ];
 
-  // Boundaries Data
-  const boundariesData1 = [
-    { name: '4s', value: Number(team1Data.total_fours || 0) * 4, fill: `${team1Color}bb` },
-    { name: '6s', value: Number(team1Data.total_sixes || 0) * 6, fill: team1Color }
-  ];
-  const boundariesData2 = [
-    { name: '4s', value: Number(team2Data.total_fours || 0) * 4, fill: `${team2Color}bb` },
-    { name: '6s', value: Number(team2Data.total_sixes || 0) * 6, fill: team2Color }
+  // 6s Comparison (percentage pie: team1 vs team2)
+  const t1Sixes = Number(team1Data.total_sixes || 0);
+  const t2Sixes = Number(team2Data.total_sixes || 0);
+  const sixesData = [
+    { name: team1?.short_name, value: t1Sixes, color: team1Color },
+    { name: team2?.short_name, value: t2Sixes, color: team2Color }
   ];
 
-  // Match-by-Match Data Processing — align by actual match_number
-  const matchNumbersSet = new Set();
-  const team1ByMatch = {};
-  const team2ByMatch = {};
+  // Custom label renderer for percentage inside pie
+  const renderPercentLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }) => {
+    const RADIAN = Math.PI / 180;
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+    if (percent === 0) return null;
+    return (
+      <text x={x} y={y} fill="#fff" textAnchor="middle" dominantBaseline="central" fontSize={13} fontWeight={800}>
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
+  };
 
-  matchComparison.forEach(m => {
-    matchNumbersSet.add(m.match_number);
-    if (String(m.team_id) === String(team1Id)) {
-      team1ByMatch[m.match_number] = m;
-    } else if (String(m.team_id) === String(team2Id)) {
-      team2ByMatch[m.match_number] = m;
-    }
-  });
-
-  const sortedMatchNumbers = [...matchNumbersSet].sort((a, b) => a - b);
-
-  const timelineData = sortedMatchNumbers.map(mn => ({
-    name: `M${mn}`,
-    [team1?.short_name]: team1ByMatch[mn]?.runs || null,
-    [team2?.short_name]: team2ByMatch[mn]?.runs || null,
-    [`${team1?.short_name} W`]: team1ByMatch[mn]?.wickets_taken || 0,
-    [`${team2?.short_name} W`]: team2ByMatch[mn]?.wickets_taken || 0,
-  }));
 
   // Custom Stat Row for aggregate data
   const StatRow = ({ label, key1, icon: Icon, isHigherBetter = true }) => {
@@ -228,99 +213,71 @@ export default function TeamCompare() {
             </div>
           </div>
 
-          {/* Graphical Visualizations Section */}
+          {/* Boundaries Comparison Section */}
           <h3 style={{ marginTop: '50px', marginBottom: '24px', fontSize: '20px', color: '#fff', borderLeft: '4px solid #d85a30', paddingLeft: '12px' }}>
-            Visual Insights
+            Boundaries Comparison
           </h3>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+          <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
             
-            {/* Run Share Donut */}
-            <div style={chartCardStyle}>
-              <h4 style={chartTitleStyle}>Total Runs Distribution</h4>
-              <div style={{ height: 250 }}>
+            {/* Fours Comparison */}
+            <div style={{ ...chartCardStyle, flex: '1 1 280px' }}>
+              <h4 style={chartTitleStyle}>Fours (4s) Share</h4>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '8px' }}>
+                <span style={{ fontSize: '28px', fontWeight: 900, color: team1Color }}>{t1Fours}</span>
+                <span style={{ fontSize: '13px', color: '#555', fontWeight: 700 }}>vs</span>
+                <span style={{ fontSize: '28px', fontWeight: 900, color: team2Color }}>{t2Fours}</span>
+              </div>
+              <div style={{ height: 220 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={runShareData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={5} dataKey="value" stroke="none">
-                      {runShareData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
+                    <Pie 
+                      data={foursData} cx="50%" cy="50%" 
+                      innerRadius={55} outerRadius={85} 
+                      paddingAngle={4} dataKey="value" stroke="none"
+                      label={renderPercentLabel}
+                      labelLine={false}
+                    >
+                      {foursData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                     </Pie>
-                    <Tooltip contentStyle={{ background: 'rgba(10,10,10,0.9)', border: '1px solid #333', borderRadius: '8px' }} itemStyle={{ color: '#fff' }} />
-                    <Legend iconType="circle" />
+                    <Tooltip 
+                      contentStyle={{ background: 'rgba(10,10,10,0.95)', border: '1px solid #333', borderRadius: '10px' }} 
+                      itemStyle={{ color: '#fff' }}
+                      formatter={(value, name) => [`${value} fours`, name]}
+                    />
+                    <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
-            {/* Boundaries Fours vs Sixes */}
-            <div style={chartCardStyle}>
-              <h4 style={chartTitleStyle}>Boundaries Breakdown (Runs)</h4>
-              <div style={{ display: 'flex', height: 250 }}>
-                <div style={{ flex: 1 }}>
-                  <p style={{ textAlign: 'center', fontSize: 12, color: team1Color, margin: 0 }}>{team1?.short_name}</p>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie data={boundariesData1} cx="50%" cy="50%" outerRadius={70} dataKey="value" stroke="rgba(0,0,0,0.2)">
-                        {boundariesData1.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
-                      </Pie>
-                      <Tooltip contentStyle={{ background: 'rgba(10,10,10,0.9)', border: 'none', borderRadius: '8px' }} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <p style={{ textAlign: 'center', fontSize: 12, color: team2Color, margin: 0 }}>{team2?.short_name}</p>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie data={boundariesData2} cx="50%" cy="50%" outerRadius={70} dataKey="value" stroke="rgba(0,0,0,0.2)">
-                        {boundariesData2.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
-                      </Pie>
-                      <Tooltip contentStyle={{ background: 'rgba(10,10,10,0.9)', border: 'none', borderRadius: '8px' }} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
+            {/* Sixes Comparison */}
+            <div style={{ ...chartCardStyle, flex: '1 1 280px' }}>
+              <h4 style={chartTitleStyle}>Sixes (6s) Share</h4>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '8px' }}>
+                <span style={{ fontSize: '28px', fontWeight: 900, color: team1Color }}>{t1Sixes}</span>
+                <span style={{ fontSize: '13px', color: '#555', fontWeight: 700 }}>vs</span>
+                <span style={{ fontSize: '28px', fontWeight: 900, color: team2Color }}>{t2Sixes}</span>
               </div>
-              <div style={{ textAlign: 'center', fontSize: 11, color: '#888' }}>Inner pie = 4s | Outer pie = 6s</div>
-            </div>
-
-            {/* Match-by-Match Runs Grid */}
-            <div style={{ ...chartCardStyle, gridColumn: '1 / -1' }}>
-              <h4 style={chartTitleStyle}>Match-by-Match Form (Runs Scored)</h4>
-              <div style={{ height: 300, marginTop: '20px' }}>
+              <div style={{ height: 220 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={timelineData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                    <XAxis dataKey="name" stroke="#666" tick={{ fill: '#888', fontSize: 12 }} axisLine={false} tickLine={false} />
-                    <YAxis stroke="#666" tick={{ fill: '#888', fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <PieChart>
+                    <Pie 
+                      data={sixesData} cx="50%" cy="50%" 
+                      innerRadius={55} outerRadius={85} 
+                      paddingAngle={4} dataKey="value" stroke="none"
+                      label={renderPercentLabel}
+                      labelLine={false}
+                    >
+                      {sixesData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                    </Pie>
                     <Tooltip 
-                      contentStyle={{ background: 'rgba(15,15,15,0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', boxShadow: '0 10px 20px rgba(0,0,0,0.5)' }} 
-                      itemStyle={{ fontWeight: 600 }}
+                      contentStyle={{ background: 'rgba(10,10,10,0.95)', border: '1px solid #333', borderRadius: '10px' }} 
+                      itemStyle={{ color: '#fff' }}
+                      formatter={(value, name) => [`${value} sixes`, name]}
                     />
-                    <Legend iconType="plainline" wrapperStyle={{ paddingTop: '20px' }} />
-                    <Line type="monotone" dataKey={team1?.short_name} stroke={team1Color} strokeWidth={4} activeDot={{ r: 8, strokeWidth: 0, fill: team1Color }} dot={{ r: 4, fill: '#111', strokeWidth: 2 }} />
-                    <Line type="monotone" dataKey={team2?.short_name} stroke={team2Color} strokeWidth={4} activeDot={{ r: 8, strokeWidth: 0, fill: team2Color }} dot={{ r: 4, fill: '#111', strokeWidth: 2 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Wickets Match-by-Match */}
-            <div style={{ ...chartCardStyle, gridColumn: '1 / -1' }}>
-              <h4 style={chartTitleStyle}>Wickets Taken Per Match</h4>
-              <div style={{ height: 300, marginTop: '20px' }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={timelineData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                    <XAxis dataKey="name" stroke="#666" tick={{ fill: '#888', fontSize: 12 }} axisLine={false} tickLine={false} />
-                    <YAxis stroke="#666" tick={{ fill: '#888', fontSize: 12 }} axisLine={false} tickLine={false} />
-                    <Tooltip 
-                      cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                      contentStyle={{ background: 'rgba(15,15,15,0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }} 
-                    />
-                    <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                    <Bar dataKey={`${team1?.short_name} W`} name={`${team1?.short_name} Wickets`} fill={team1Color} radius={[4, 4, 0, 0]} barSize={20} />
-                    <Bar dataKey={`${team2?.short_name} W`} name={`${team2?.short_name} Wickets`} fill={team2Color} radius={[4, 4, 0, 0]} barSize={20} />
-                  </BarChart>
+                    <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
+                  </PieChart>
                 </ResponsiveContainer>
               </div>
             </div>

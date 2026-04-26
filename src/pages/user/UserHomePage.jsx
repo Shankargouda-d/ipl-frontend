@@ -4,6 +4,164 @@ import http from "../../api/http";
 import { getTeamColor } from "../../utils/teamColors";
 import MatchPrediction from "../../components/MatchPrediction";
 
+// Generate a random visitor ID if not present
+const getVisitorId = () => {
+  let vid = localStorage.getItem("ipl_visitor_id");
+  if (!vid) {
+    vid = "v_" + Math.random().toString(36).substr(2, 9) + Date.now();
+    localStorage.setItem("ipl_visitor_id", vid);
+  }
+  return vid;
+};
+
+function FanbaseWidget({ triggerUpdate }) {
+  const [standings, setStandings] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    http.get("/fans/standings").then((res) => {
+      setStandings(res.data);
+      setLoading(false);
+    });
+  }, [triggerUpdate]);
+
+  if (loading || standings.length === 0) return null;
+
+  return (
+    <div style={{
+      position: "fixed",
+      bottom: 24,
+      right: 24,
+      width: 260,
+      background: "rgba(15,15,15,0.85)",
+      backdropFilter: "blur(12px)",
+      border: "1px solid rgba(255,255,255,0.1)",
+      borderRadius: 16,
+      padding: 16,
+      boxShadow: "0 10px 40px rgba(0,0,0,0.5)",
+      zIndex: 50,
+      animation: "slideInUp 0.6s ease-out"
+    }}>
+      <h4 style={{ margin: "0 0 12px", color: "#fff", fontSize: 14, display: "flex", justifyContent: "space-between" }}>
+        <span>🔥 Fanbase Standings</span>
+      </h4>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {standings.slice(0, 5).map((t, idx) => {
+          const color = getTeamColor(t.short_name);
+          return (
+            <div key={t.team_id} style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              background: "rgba(0,0,0,0.3)", padding: "6px 10px", borderRadius: 8,
+              borderLeft: `3px solid ${color}`
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ color: "#888", fontSize: 12, fontWeight: 700, width: 14 }}>{idx + 1}.</span>
+                <span style={{ color: "#fff", fontSize: 13, fontWeight: 700 }}>{t.short_name}</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ color: "#ccc", fontSize: 12, fontWeight: 600 }}>{t.fan_count}</span>
+                {/* Randomly animating arrows just for dynamic feel */}
+                <span style={{
+                  fontSize: 10,
+                  color: Math.random() > 0.5 ? "#22c55e" : "#ef4444",
+                  animation: `bounceUpDown ${1.5 + Math.random()}s infinite alternate ease-in-out`
+                }}>
+                  {Math.random() > 0.5 ? "▲" : "▼"}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <style>{`
+        @keyframes slideInUp {
+          from { transform: translateY(100px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes bounceUpDown {
+          from { transform: translateY(-2px); }
+          to { transform: translateY(2px); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function FavoriteTeamModal({ onComplete }) {
+  const [teams, setTeams] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    http.get("/teams").then(r => setTeams(r.data));
+  }, []);
+
+  const selectTeam = async (teamId) => {
+    setLoading(true);
+    const vid = getVisitorId();
+    try {
+      await http.post("/fans/vote", { visitor_id: vid, team_id: teamId });
+      localStorage.setItem("ipl_favorite_team", teamId);
+      onComplete();
+    } catch (err) {
+      console.error("Vote failed", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0,
+      background: "rgba(0,0,0,0.85)", backdropFilter: "blur(10px)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      zIndex: 9999, padding: 20
+    }}>
+      <div style={{
+        background: "#111", border: "1px solid #333", borderRadius: 24,
+        padding: "40px 30px", maxWidth: 500, width: "100%",
+        textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.8)",
+        animation: "fadeIn 0.4s ease-out"
+      }}>
+        <div style={{ fontSize: 40, marginBottom: 10 }}>💖</div>
+        <h2 style={{ color: "#fff", margin: "0 0 10px", fontSize: 24 }}>Who is your favorite team?</h2>
+        <p style={{ color: "#888", marginBottom: 30, fontSize: 14 }}>Join the fanbase and push your team up the leaderboard!</p>
+        
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          {teams.map(t => {
+            const color = getTeamColor(t.short_name);
+            return (
+              <button
+                key={t.team_id}
+                disabled={loading}
+                onClick={() => selectTeam(t.team_id)}
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: `1px solid ${color}44`,
+                  borderRadius: 12, padding: "14px",
+                  color: "#fff", cursor: "pointer",
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+                  transition: "all 0.2s"
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = `${color}22`; e.currentTarget.style.borderColor = color; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.borderColor = `${color}44`; }}
+              >
+                <span style={{ fontSize: 18, fontWeight: 900, color }}>{t.short_name}</span>
+                <span style={{ fontSize: 11, color: "#aaa" }}>{t.team_name}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 function Navbar() {
   return (
     <nav style={{ background: "#111", borderBottom: "1px solid #1a1a1a", padding: "14px 24px", display: "flex", gap: 24, alignItems: "center", flexWrap: "wrap" }}>
@@ -124,6 +282,9 @@ export default function UserHomePage() {
   const [mostSixes, setMostSixes] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
 
+  const [showModal, setShowModal] = useState(false);
+  const [fanbaseUpdate, setFanbaseUpdate] = useState(0);
+
   useEffect(() => {
     http.get("/matches?status=live").then((r) => setLive(r.data));
     http.get("/matches?status=scheduled").then((r) => setUpcoming(r.data.slice(0, 3)));
@@ -137,10 +298,18 @@ export default function UserHomePage() {
       setPurpleCap(pc.data?.[0] || null);
       setMostSixes(sx.data?.[0] || null);
     }).finally(() => setStatsLoading(false));
+
+    // Check favorite team logic
+    const fav = localStorage.getItem("ipl_favorite_team");
+    if (!fav) {
+      setShowModal(true);
+    }
   }, []);
 
   return (
     <div style={{ minHeight: "100vh", background: "#0a0a0a", color: "#fff" }}>
+      {showModal && <FavoriteTeamModal onComplete={() => { setShowModal(false); setFanbaseUpdate(prev => prev + 1); }} />}
+      <FanbaseWidget triggerUpdate={fanbaseUpdate} />
       <Navbar />
 
       {/* Hero section */}

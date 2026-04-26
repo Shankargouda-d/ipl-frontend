@@ -462,195 +462,6 @@ function StatBar({ label, v1, v2, c1, c2, name1, name2 }) {
   );
 }
 
-/* ── Run Trend Chart ── */
-function RunTrendChart({
-  trend1,
-  trend2,
-  name1,
-  name2,
-  c1 = DEFAULT_C1,
-  c2 = DEFAULT_C2,
-}) {
-  if (!trend1.length && !trend2.length) return null;
-  const W = 560,
-    H = 180,
-    PAD = { top: 20, bottom: 40, left: 36, right: 16 };
-  const innerW = W - PAD.left - PAD.right;
-  const innerH = H - PAD.top - PAD.bottom;
-  const allLabels = Array.from(
-    new Set([
-      ...trend1.map((d) => d.match_label),
-      ...trend2.map((d) => d.match_label),
-    ])
-  );
-  const getVal = (trend, label) => {
-    const row = trend.find((d) => d.match_label === label);
-    return row ? Number(row.runs) : null;
-  };
-  const allVals = allLabels
-    .flatMap((l) => [getVal(trend1, l), getVal(trend2, l)])
-    .filter((v) => v !== null);
-  const maxV = Math.max(...allVals, 1);
-  const xPos = (i) =>
-    PAD.left + (i / Math.max(allLabels.length - 1, 1)) * innerW;
-  const yPos = (v) => PAD.top + innerH - (v / maxV) * innerH;
-  const buildPath = (trend) => {
-    const pts = allLabels
-      .map((l, i) => {
-        const v = getVal(trend, l);
-        return v !== null ? `${xPos(i)},${yPos(v)}` : null;
-      })
-      .filter(Boolean);
-    return pts.length < 2 ? null : "M " + pts.join(" L ");
-  };
-  const path1 = buildPath(trend1),
-    path2 = buildPath(trend2);
-  const gridLines = [0, 25, 50, 75, 100].map((pct) => {
-    const v = Math.round((pct / 100) * maxV);
-    return { v, y: yPos(v) };
-  });
-
-  return (
-    <div style={{ overflowX: "auto" }}>
-      <div
-        style={{
-          color: "#aaa",
-          fontSize: 13,
-          fontWeight: 700,
-          marginBottom: 12,
-          letterSpacing: 0.5,
-        }}
-      >
-        📈 Run Trend (Match by Match)
-      </div>
-      <svg width={W} height={H} style={{ display: "block", minWidth: W }}>
-        {gridLines.map(({ v, y }) => (
-          <g key={v}>
-            <line
-              x1={PAD.left}
-              x2={W - PAD.right}
-              y1={y}
-              y2={y}
-              stroke="#1f1f1f"
-              strokeWidth={1}
-            />
-            <text
-              x={PAD.left - 4}
-              y={y}
-              textAnchor="end"
-              dominantBaseline="middle"
-              fill="#444"
-              fontSize={9}
-            >
-              {v}
-            </text>
-          </g>
-        ))}
-        {allLabels.map((l, i) => (
-          <text
-            key={i}
-            x={xPos(i)}
-            y={H - PAD.bottom + 14}
-            textAnchor="middle"
-            fill="#444"
-            fontSize={8}
-            transform={`rotate(-30, ${xPos(i)}, ${H - PAD.bottom + 14})`}
-          >
-            {l}
-          </text>
-        ))}
-        {path1 && (
-          <path
-            d={path1}
-            fill="none"
-            stroke={c1}
-            strokeWidth={2.5}
-            strokeLinejoin="round"
-            strokeLinecap="round"
-          />
-        )}
-        {path2 && (
-          <path
-            d={path2}
-            fill="none"
-            stroke={c2}
-            strokeWidth={2.5}
-            strokeLinejoin="round"
-            strokeLinecap="round"
-          />
-        )}
-        {[{ trend: trend1, color: c1 }, { trend: trend2, color: c2 }].map(
-          ({ trend, color }, ti) =>
-            allLabels.map((l, i) => {
-              const v = getVal(trend, l);
-              if (v === null) return null;
-              const px = xPos(i),
-                py = yPos(v);
-              const prev = i > 0 ? getVal(trend, allLabels[i - 1]) : null;
-              const arrow =
-                prev === null ? "" : v > prev ? "▲" : v < prev ? "▼" : "–";
-              const arrowColor =
-                v > prev ? "#22c55e" : v < prev ? "#ef4444" : "#888";
-              return (
-                <g key={`${ti}-${i}`}>
-                  <circle
-                    cx={px}
-                    cy={py}
-                    r={4}
-                    fill={color}
-                    stroke="#0a0a0a"
-                    strokeWidth={1.5}
-                  />
-                  <title>
-                    {l}: {v} runs
-                  </title>
-                  {arrow && (
-                    <text
-                      x={px}
-                      y={py - 11}
-                      textAnchor="middle"
-                      fill={arrowColor}
-                      fontSize={9}
-                      fontWeight={700}
-                    >
-                      {arrow}
-                    </text>
-                  )}
-                </g>
-              );
-            })
-        )}
-      </svg>
-      <div style={{ display: "flex", gap: 20, marginTop: 10 }}>
-        {[{ name: name1, color: c1 }, { name: name2, color: c2 }].map(
-          ({ name, color }) => (
-            <span
-              key={name}
-              style={{
-                fontSize: 12,
-                color: "#aaa",
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-              }}
-            >
-              <span
-                style={{
-                  width: 24,
-                  height: 3,
-                  background: color,
-                  display: "inline-block",
-                  borderRadius: 2,
-                }}
-              />
-              {name}
-            </span>
-          )
-        )}
-      </div>
-    </div>
-  );
-}
 
 /* ── MAIN COMPONENT ── */
 export default function PlayerCompare() {
@@ -658,8 +469,6 @@ export default function PlayerCompare() {
   const [sel1, setSel1] = useState(null);
   const [sel2, setSel2] = useState(null);
   const [compareData, setCompareData] = useState(null);
-  const [trend1, setTrend1] = useState([]);
-  const [trend2, setTrend2] = useState([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -670,16 +479,10 @@ export default function PlayerCompare() {
     if (!sel1 || !sel2) return;
     setLoading(true);
     try {
-      const [cmp, t1, t2] = await Promise.all([
-        http.get(
-          `/stats/compare?player1=${sel1.player_id}&player2=${sel2.player_id}`
-        ),
-        http.get(`/stats/player-matches/${sel1.player_id}`),
-        http.get(`/stats/player-matches/${sel2.player_id}`),
-      ]);
+      const cmp = await http.get(
+        `/stats/compare?player1=${sel1.player_id}&player2=${sel2.player_id}`
+      );
       setCompareData(cmp.data);
-      setTrend1(t1.data || []);
-      setTrend2(t2.data || []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -1136,28 +939,6 @@ export default function PlayerCompare() {
                 </div>
               ))}
             </div>
-
-            {/* Run Trend */}
-            {(trend1.length > 0 || trend2.length > 0) && (
-              <div
-                style={{
-                  background: "#111",
-                  borderRadius: 12,
-                  padding: 20,
-                  border: "1px solid #1a1a1a",
-                  marginTop: 20,
-                }}
-              >
-                <RunTrendChart
-                  trend1={trend1}
-                  trend2={trend2}
-                  name1={p1.player_name}
-                  name2={p2.player_name}
-                  c1={c1}
-                  c2={c2}
-                />
-              </div>
-            )}
           </div>
         </>
       )}

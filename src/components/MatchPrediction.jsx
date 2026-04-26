@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import http from "../../api/http";
+import http from "../api/http";
 
 export default function MatchPrediction({ match }) {
   const [predictionData, setPredictionData] = useState(null);

@@ -83,6 +83,88 @@ export default function UserPointsTablePage() {
             <span style={{ color: "#639922", fontSize: 11 }}>● Playoff qualification zone (Top 4)</span>
           </div>
         </div>
+
+        {points.length > 0 && (
+          <div style={{ marginTop: 40 }}>
+            <h2 style={{ fontSize: 20, marginBottom: 16, color: "#fff" }}>Playoff Scenarios</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+              {points.map((t) => {
+                const tc = getTeamColor(t.short_name || t.team_name);
+                let status = "In the Hunt";
+                let statusColor = "#f39c12";
+
+                if (t.points >= 18 || (t.points >= 16 && t.nrr > 0.5)) {
+                  status = "Strong Chance";
+                  statusColor = "#639922";
+                } else if (t.max_possible_points < 14) {
+                  status = "Nearly Eliminated";
+                  statusColor = "#e24b4a";
+                } else if (t.points >= 16) {
+                  status = "Safe Zone";
+                  statusColor = "#27ae60";
+                }
+
+                return (
+                  <div key={t.team_id} style={{ 
+                    background: "#1a1a1a", 
+                    border: "1px solid #2a2a2a", 
+                    borderRadius: 12, 
+                    padding: 20,
+                    borderLeft: `4px solid ${tc}`
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+                      <div>
+                        <div style={{ fontSize: 16, fontWeight: 700 }}>{t.team_name}</div>
+                        <div style={{ fontSize: 12, color: "#666" }}>{t.short_name} • {t.points} Pts</div>
+                      </div>
+                      <div style={{ 
+                        fontSize: 10, 
+                        fontWeight: 700, 
+                        textTransform: "uppercase", 
+                        padding: "4px 8px", 
+                        borderRadius: 4, 
+                        background: `${statusColor}22`, 
+                        color: statusColor,
+                        border: `1px solid ${statusColor}44`
+                      }}>
+                        {status}
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", gap: 20, marginBottom: 12 }}>
+                      <div>
+                        <div style={{ fontSize: 10, color: "#666", textTransform: "uppercase", letterSpacing: 1 }}>Remaining</div>
+                        <div style={{ fontSize: 18, fontWeight: 700 }}>{t.matches_left}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 10, color: "#666", textTransform: "uppercase", letterSpacing: 1 }}>Target (16)</div>
+                        <div style={{ fontSize: 18, fontWeight: 700 }}>
+                          {t.wins_needed_to_16 > 0 ? (
+                            <span style={{ color: t.wins_needed_to_16 > t.matches_left ? "#e24b4a" : "#fff" }}>
+                              {t.wins_needed_to_16} W
+                            </span>
+                          ) : (
+                            <span style={{ color: "#639922" }}>✓</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ fontSize: 12, color: "#888" }}>
+                      {t.wins_needed_to_16 > t.matches_left ? (
+                        "Cannot reach 16 points anymore."
+                      ) : t.wins_needed_to_16 === 0 ? (
+                        "Minimum points for safety reached!"
+                      ) : (
+                        `Needs to win ${t.wins_needed_to_16} out of ${t.matches_left} matches to reach 16 points.`
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

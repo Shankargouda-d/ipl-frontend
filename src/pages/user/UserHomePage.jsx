@@ -138,7 +138,7 @@ function FavoriteTeamModal({ onComplete }) {
       }}>
         {!showResults ? (
           <>
-            <h2 style={{ color: "#fff", margin: "0 0 10px", fontSize: 24 }}>Who is your favorite team?</h2>
+            <h2 style={{ color: "#fff", margin: "0 0 10px", fontSize: 24 }}>What is your favorite team?</h2>
             <p style={{ color: "#888", marginBottom: 30, fontSize: 14 }}>Join the fanbase and push your team up the leaderboard!</p>
             
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>

@@ -165,7 +165,7 @@ function BattingTable({
                     ))}
                     style={ci}
                   >
-                    {["not out", "bowled", "caught", "lbw", "run out", "stumped", "hit wicket", "retired hurt", "did not bat"].map((d) => (
+                    {["not out", "bowled", "caught", "lbw", "run out", "stumped", "hit wicket", "retired hurt", "obstructing the field", "did not bat"].map((d) => (
                       <option key={d}>{d}</option>
                     ))}
                   </select>
@@ -457,6 +457,16 @@ export default function ScorecardPage() {
   const [inn1Overs, setInn1Overs] = useState("");
   const [inn2Overs, setInn2Overs] = useState("");
 
+  const [hasSuperOver, setHasSuperOver] = useState(false);
+  const [bat3, setBat3] = useState([]);
+  const [bat4, setBat4] = useState([]);
+  const [bowl3, setBowl3] = useState([]);
+  const [bowl4, setBowl4] = useState([]);
+  const [ext3, setExt3] = useState({ wides: 0, no_balls: 0, byes: 0, leg_byes: 0 });
+  const [ext4, setExt4] = useState({ wides: 0, no_balls: 0, byes: 0, leg_byes: 0 });
+  const [inn3Overs, setInn3Overs] = useState("");
+  const [inn4Overs, setInn4Overs] = useState("");
+
   useEffect(() => { loadData(); }, [id]);
 
   const loadData = async () => {
@@ -543,6 +553,23 @@ export default function ScorecardPage() {
         no_balls: "0",
       })));
 
+      const createBatRow = (p, i) => ({
+        player_id: p.player_id, player_name: p.player_name,
+        runs: "", balls: "", fours: "", sixes: "",
+        dismissal_type: "not out", wicket_taker_player_id: "", fielder_player_id: "", fielder_sub_name: "",
+        batting_order: i + 1,
+      });
+
+      const createBowlRow = (p) => ({
+        player_id: p.player_id, player_name: p.player_name,
+        overs: "", maidens: "0", runs_conceded: "", wickets: "", wides: "0", no_balls: "0",
+      });
+
+      setBat3(batSecondSquad.map(createBatRow));
+      setBat4(batFirstSquad.map(createBatRow));
+      setBowl3(batFirstSquad.map(createBowlRow));
+      setBowl4(batSecondSquad.map(createBowlRow));
+
     } catch (e) {
       console.error("loadData error:", e);
       setLoadError(e?.response?.data?.error || e.message || "Failed to load match data");
@@ -552,10 +579,10 @@ export default function ScorecardPage() {
   const saveInnings = async (num) => {
     if (!toss) { setMsg("Toss missing. Complete toss setup first."); return; }
 
-    const batting = num === 1 ? bat1 : bat2;
-    const bowling = num === 1 ? bowl1 : bowl2;
-    const extras = num === 1 ? ext1 : ext2;
-    const overs = num === 1 ? inn1Overs : inn2Overs;
+    const batting = num === 1 ? bat1 : num === 2 ? bat2 : num === 3 ? bat3 : bat4;
+    const bowling = num === 1 ? bowl1 : num === 2 ? bowl2 : num === 3 ? bowl3 : bowl4;
+    const extras = num === 1 ? ext1 : num === 2 ? ext2 : num === 3 ? ext3 : ext4;
+    const overs = num === 1 ? inn1Overs : num === 2 ? inn2Overs : num === 3 ? inn3Overs : inn4Overs;
 
     const errors = validateInnings(batting, bowling, overs);
     if (errors.length > 0) {
@@ -565,8 +592,9 @@ export default function ScorecardPage() {
 
     const batFirstId = toss.batting_first_team_id;
     const batSecondId = batFirstId === match.team1_id ? match.team2_id : match.team1_id;
-    const batting_team_id = num === 1 ? batFirstId : batSecondId;
-    const bowling_team_id = num === 1 ? batSecondId : batFirstId;
+    // In Super Over, team batting second normally bats first (innings 3)
+    const batting_team_id = (num === 1 || num === 4) ? batFirstId : batSecondId;
+    const bowling_team_id = (num === 1 || num === 4) ? batSecondId : batFirstId;
 
     const playingBatting = batting.filter((b) => b.dismissal_type !== "did not bat");
     const extTotal = Object.values(extras).reduce((s, v) => s + (parseInt(v) || 0), 0);
@@ -681,12 +709,21 @@ export default function ScorecardPage() {
     );
   }
 
-  const tabs = [
+  let tabs = [
     { key: "inn1-bat", label: "1st Inn Batting" },
     { key: "inn1-bowl", label: "1st Inn Bowling" },
     { key: "inn2-bat", label: "2nd Inn Batting" },
     { key: "inn2-bowl", label: "2nd Inn Bowling" },
   ];
+
+  if (hasSuperOver) {
+    tabs.push(
+      { key: "inn3-bat", label: "SO 1st Inn Bat" },
+      { key: "inn3-bowl", label: "SO 1st Inn Bowl" },
+      { key: "inn4-bat", label: "SO 2nd Inn Bat" },
+      { key: "inn4-bowl", label: "SO 2nd Inn Bowl" }
+    );
+  }
 
   return (
     <div style={{ minHeight: "100vh", background: "#0f0f0f", color: "#fff" }}>
@@ -715,7 +752,7 @@ export default function ScorecardPage() {
           </div>
         )}
 
-        <div style={{ display: "flex", gap: 4, marginBottom: 24, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 4, marginBottom: 24, flexWrap: "wrap", alignItems: "center" }}>
           {tabs.map((t) => (
             <button key={t.key} onClick={() => setActiveTab(t.key)}
               style={{ padding: "8px 16px", borderRadius: 8, border: "none",
@@ -725,29 +762,44 @@ export default function ScorecardPage() {
               {t.label}
             </button>
           ))}
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8, background: "#1a1a1a", padding: "6px 12px", borderRadius: 8, border: "1px solid #333" }}>
+            <input 
+              type="checkbox" 
+              id="superOverToggle" 
+              checked={hasSuperOver} 
+              onChange={(e) => setHasSuperOver(e.target.checked)} 
+            />
+            <label htmlFor="superOverToggle" style={{ fontSize: 13, color: "#aaa", cursor: "pointer" }}>Enable Super Over</label>
+          </div>
         </div>
 
         {activeTab === "inn1-bat" && (
-          <BattingTable rows={bat1} setRows={setBat1}
-            overs={inn1Overs} setOvers={setInn1Overs}
-            extras={ext1} setExtras={setExt1}
-            onSave={() => saveInnings(1)} saving={saving}
-            bowlingSquad={bsSquad} />
+          <BattingTable rows={bat1} setRows={setBat1} overs={inn1Overs} setOvers={setInn1Overs}
+            extras={ext1} setExtras={setExt1} onSave={() => saveInnings(1)} saving={saving} bowlingSquad={bsSquad} />
         )}
         {activeTab === "inn1-bowl" && (
-          <BowlingTable rows={bowl1} setRows={setBowl1}
-            onSave={() => saveInnings(1)} saving={saving} />
+          <BowlingTable rows={bowl1} setRows={setBowl1} onSave={() => saveInnings(1)} saving={saving} />
         )}
         {activeTab === "inn2-bat" && (
-          <BattingTable rows={bat2} setRows={setBat2}
-            overs={inn2Overs} setOvers={setInn2Overs}
-            extras={ext2} setExtras={setExt2}
-            onSave={() => saveInnings(2)} saving={saving}
-            bowlingSquad={bfSquad} />
+          <BattingTable rows={bat2} setRows={setBat2} overs={inn2Overs} setOvers={setInn2Overs}
+            extras={ext2} setExtras={setExt2} onSave={() => saveInnings(2)} saving={saving} bowlingSquad={bfSquad} />
         )}
         {activeTab === "inn2-bowl" && (
-          <BowlingTable rows={bowl2} setRows={setBowl2}
-            onSave={() => saveInnings(2)} saving={saving} />
+          <BowlingTable rows={bowl2} setRows={setBowl2} onSave={() => saveInnings(2)} saving={saving} />
+        )}
+        {hasSuperOver && activeTab === "inn3-bat" && (
+          <BattingTable rows={bat3} setRows={setBat3} overs={inn3Overs} setOvers={setInn3Overs}
+            extras={ext3} setExtras={setExt3} onSave={() => saveInnings(3)} saving={saving} bowlingSquad={bfSquad} />
+        )}
+        {hasSuperOver && activeTab === "inn3-bowl" && (
+          <BowlingTable rows={bowl3} setRows={setBowl3} onSave={() => saveInnings(3)} saving={saving} />
+        )}
+        {hasSuperOver && activeTab === "inn4-bat" && (
+          <BattingTable rows={bat4} setRows={setBat4} overs={inn4Overs} setOvers={setInn4Overs}
+            extras={ext4} setExtras={setExt4} onSave={() => saveInnings(4)} saving={saving} bowlingSquad={bsSquad} />
+        )}
+        {hasSuperOver && activeTab === "inn4-bowl" && (
+          <BowlingTable rows={bowl4} setRows={setBowl4} onSave={() => saveInnings(4)} saving={saving} />
         )}
 
         <div style={{ marginTop: 40, padding: 24, background: "#1a1a1a",

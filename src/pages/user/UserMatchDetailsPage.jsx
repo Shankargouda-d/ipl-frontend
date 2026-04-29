@@ -330,22 +330,28 @@ export default function UserMatchDetailsPage() {
         </div>
 
         <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
-          {innings.map((inn, index) => (
-            <button
-              key={inn.innings_id}
-              onClick={() => setActiveInnings(index)}
-              style={{
-                padding: "8px 16px",
-                borderRadius: 20,
-                border: "none",
-                cursor: "pointer",
-                background: activeInnings === index ? "#d85a30" : "#1a1a1a",
-                color: activeInnings === index ? "#fff" : "#aaa",
-              }}
-            >
-              {inn.team_name} Innings {index + 1}
-            </button>
-          ))}
+          {innings.map((inn, index) => {
+            const isSuperOver = index >= 2;
+            const label = isSuperOver ? `Super Over Innings ${index - 1}` : `${inn.team_name || inn.battingteamname || ""} Innings ${index + 1}`;
+            const bgActive = isSuperOver ? "linear-gradient(90deg, #639922, #d8cc22)" : "#d85a30";
+            return (
+              <button
+                key={inn.innings_id}
+                onClick={() => setActiveInnings(index)}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: 20,
+                  border: "none",
+                  cursor: "pointer",
+                  background: activeInnings === index ? bgActive : "#1a1a1a",
+                  color: activeInnings === index ? (isSuperOver ? "#000" : "#fff") : "#aaa",
+                  fontWeight: activeInnings === index ? "bold" : "normal"
+                }}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
 
         {currentInnings && (

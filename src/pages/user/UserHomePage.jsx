@@ -26,24 +26,56 @@ function FanbaseWidget({ triggerUpdate }) {
     });
   }, [triggerUpdate]);
 
+  const buttonStyle = {
+    background: "rgba(15,15,15,0.85)", 
+    backdropFilter: "blur(12px)",
+    border: "1px solid rgba(255,255,255,0.1)", 
+    borderRadius: 24,
+    padding: "10px 20px", 
+    color: "#fff", 
+    cursor: "pointer",
+    boxShadow: "0 10px 40px rgba(0,0,0,0.5)", 
+    fontWeight: "bold",
+    display: "flex", 
+    alignItems: "center", 
+    gap: 8,
+    width: "fit-content",
+    transition: "all 0.2s"
+  };
+
   if (loading || standings.length === 0) return null;
 
   return (
-    <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 50 }}>
+    <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 50, display: "flex", flexDirection: "column", gap: 12, alignItems: "flex-end" }}>
       {!isOpen && (
-        <button 
-          onClick={() => setIsOpen(true)}
-          style={{
-            background: "rgba(15,15,15,0.85)", backdropFilter: "blur(12px)",
-            border: "1px solid rgba(255,255,255,0.1)", borderRadius: 24,
-            padding: "10px 20px", color: "#fff", cursor: "pointer",
-            boxShadow: "0 10px 40px rgba(0,0,0,0.5)", fontWeight: "bold",
-            display: "flex", alignItems: "center", gap: 8,
-            animation: "slideInUp 0.6s ease-out"
-          }}
-        >
-          🔥 Fans Stand
-        </button>
+        <>
+          <Link to="/do-you-know" style={{ textDecoration: "none" }}>
+            <button 
+              style={{ ...buttonStyle, animation: "slideInUp 0.8s ease-out" }}
+              onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
+              onMouseLeave={e => e.currentTarget.style.background = "rgba(15,15,15,0.85)"}
+            >
+              💡 Do You Know?
+            </button>
+          </Link>
+          <Link to="/quiz" style={{ textDecoration: "none" }}>
+            <button 
+              style={{ ...buttonStyle, animation: "slideInUp 0.7s ease-out" }}
+              onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
+              onMouseLeave={e => e.currentTarget.style.background = "rgba(15,15,15,0.85)"}
+            >
+              🧠 IPL Quiz
+            </button>
+          </Link>
+          <button 
+            onClick={() => setIsOpen(true)}
+            style={{ ...buttonStyle, animation: "slideInUp 0.6s ease-out" }}
+            onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
+            onMouseLeave={e => e.currentTarget.style.background = "rgba(15,15,15,0.85)"}
+          >
+            🔥 Fans Stand
+          </button>
+        </>
       )}
       
       {isOpen && (
@@ -92,6 +124,7 @@ function FanbaseWidget({ triggerUpdate }) {
     </div>
   );
 }
+
 
 function FavoriteTeamModal({ onComplete }) {
   const [teams, setTeams] = useState([]);

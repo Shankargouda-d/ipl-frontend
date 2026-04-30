@@ -11,6 +11,9 @@ import UserMatchDetailsPage from "./pages/user/UserMatchDetailsPage";
 import UserPlayerStatsPage from "./pages/user/UserPlayerStatsPage";
 import UserPointsTablePage from "./pages/user/UserPointsTablePage";
 import UserTeamStatsPage from "./pages/user/UserTeamStatsPage";
+import QuizPage from "./pages/user/QuizPage";
+import DoYouKnowPage from "./pages/user/DoYouKnowPage";
+
 
 
 function AdminProtected({ children }) {
@@ -27,6 +30,9 @@ export default function App() {
       <Route path="/stats" element={<UserPlayerStatsPage />} />
       <Route path="/points" element={<UserPointsTablePage />} />
       <Route path="/team-stats" element={<UserTeamStatsPage />} />
+      <Route path="/quiz" element={<QuizPage />} />
+      <Route path="/do-you-know" element={<DoYouKnowPage />} />
+
 
 
       <Route path="/admin" element={<AdminGate />} />

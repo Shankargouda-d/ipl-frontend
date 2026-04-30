@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import http from "../../api/http";
 import MatchBoundaryChart from "../../components/MatchBoundaryChart";
+import MatchPrediction from "../../components/MatchPrediction";
+
 
 function Navbar() {
   return (
@@ -172,8 +174,9 @@ export default function UserMatchDetailsPage() {
   const [innings, setInnings] = useState([]);
   const [batting, setBatting] = useState({});
   const [bowling, setBowling] = useState({});
-  const [activeInnings, setActiveInnings] = useState(0);
+  const [activeTab, setActiveTab] = useState("overview"); // "overview", 0, 1, etc.
   const [loading, setLoading] = useState(true);
+
 
   useEffect(() => {
     loadAll();
@@ -221,7 +224,8 @@ export default function UserMatchDetailsPage() {
     }
   };
 
-  const currentInnings = innings?.[activeInnings] || null;
+  const currentInnings = typeof activeTab === "number" ? innings?.[activeTab] : null;
+
 
   const batRows =
     currentInnings && batting[currentInnings.innings_id]
@@ -329,7 +333,21 @@ export default function UserMatchDetailsPage() {
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
+        <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
+          <button
+            onClick={() => setActiveTab("overview")}
+            style={{
+              padding: "8px 16px",
+              borderRadius: 20,
+              border: "none",
+              cursor: "pointer",
+              background: activeTab === "overview" ? "#d85a30" : "#1a1a1a",
+              color: activeTab === "overview" ? "#fff" : "#aaa",
+              fontWeight: activeTab === "overview" ? "bold" : "normal"
+            }}
+          >
+            Overview
+          </button>
           {innings.map((inn, index) => {
             const isSuperOver = index >= 2;
             const label = isSuperOver ? `Super Over Innings ${index - 1}` : `${inn.team_name || inn.battingteamname || ""} Innings ${index + 1}`;
@@ -337,15 +355,15 @@ export default function UserMatchDetailsPage() {
             return (
               <button
                 key={inn.innings_id}
-                onClick={() => setActiveInnings(index)}
+                onClick={() => setActiveTab(index)}
                 style={{
                   padding: "8px 16px",
                   borderRadius: 20,
                   border: "none",
                   cursor: "pointer",
-                  background: activeInnings === index ? bgActive : "#1a1a1a",
-                  color: activeInnings === index ? (isSuperOver ? "#000" : "#fff") : "#aaa",
-                  fontWeight: activeInnings === index ? "bold" : "normal"
+                  background: activeTab === index ? bgActive : "#1a1a1a",
+                  color: activeTab === index ? (isSuperOver ? "#000" : "#fff") : "#aaa",
+                  fontWeight: activeTab === index ? "bold" : "normal"
                 }}
               >
                 {label}
@@ -354,12 +372,187 @@ export default function UserMatchDetailsPage() {
           })}
         </div>
 
-        {currentInnings && (
-          <div>
-            <h3>
+
+        {activeTab === "overview" && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))", gap: 24, animation: "fadeIn 0.4s ease-out" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              {/* Match Info Card */}
+              <div style={{
+                background: "linear-gradient(145deg, #1a1a1a, #111)",
+                border: "1px solid #333",
+                borderRadius: 16,
+                padding: 24,
+                boxShadow: "0 10px 30px rgba(0,0,0,0.5)"
+              }}>
+                <h3 style={{ margin: "0 0 20px", fontSize: 18, color: "#d85a30", display: "flex", alignItems: "center", gap: 8 }}>
+                  ℹ️ Match Information
+                </h3>
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  <div style={{ display: "flex", gap: 12 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 10, background: "#d85a301a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>🏟️</div>
+                    <div>
+                      <div style={{ fontSize: 12, color: "#666", textTransform: "uppercase", letterSpacing: 1 }}>Venue</div>
+                      <div style={{ fontSize: 15, fontWeight: 600 }}>{match.venue}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 12 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 10, background: "#378ADD1a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>🪙</div>
+                    <div>
+                      <div style={{ fontSize: 12, color: "#666", textTransform: "uppercase", letterSpacing: 1 }}>Toss</div>
+                      <div style={{ fontSize: 15, fontWeight: 600 }}>
+                        {match.toss_winner_team_id ? (
+                          `${match.toss_winner_team_id === match.team1_id ? match.team1_short : match.team2_short} won the toss & elected to ${match.decision}`
+                        ) : "Toss info not available"}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 12 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 10, background: "#6399221a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>🏁</div>
+                    <div>
+                      <div style={{ fontSize: 12, color: "#666", textTransform: "uppercase", letterSpacing: 1 }}>Result</div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: "#639922" }}>{match.result_text || "Match in progress"}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Fan Analysis Card */}
+              <div style={{
+                background: "linear-gradient(145deg, #1a1a1a, #111)",
+                border: "1px solid #333",
+                borderRadius: 16,
+                padding: 24,
+                boxShadow: "0 10px 30px rgba(0,0,0,0.5)"
+              }}>
+                <h3 style={{ margin: "0 0 16px", fontSize: 18, color: "#378ADD", display: "flex", alignItems: "center", gap: 8 }}>
+                  📊 Fan Analysis
+                </h3>
+                <MatchPrediction match={match} />
+              </div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              {/* Player of the Match Section */}
+              {match && (match.potm_name || match.player_of_match) ? (() => {
+                const potmName = match.potm_name || match.player_of_match;
+
+                // Find batting performance across all innings
+                let batPerf = null;
+                for (const inn of innings) {
+                  const rows = batting[inn.innings_id] || [];
+                  const row = rows.find((b) => b.player_name === potmName);
+                  if (row && row.dismissal_type !== "did not bat") {
+                    batPerf = row;
+                    break;
+                  }
+                }
+
+                // Find bowling performance across all innings
+                let bowlPerf = null;
+                for (const inn of innings) {
+                  const rows = bowling[inn.innings_id] || [];
+                  const row = rows.find((b) => b.player_name === potmName);
+                  if (row && (parseFloat(row.overs) > 0 || parseInt(row.wickets) > 0)) {
+                    bowlPerf = row;
+                    break;
+                  }
+                }
+
+                return (
+                  <div style={{
+                    padding: "28px 24px",
+                    background: "linear-gradient(135deg, #1a1200 0%, #111 60%, #0d0d0d 100%)",
+                    borderRadius: 16, border: "1px solid #EF9F2766",
+                    boxShadow: "0 0 32px rgba(239,159,39,0.08)",
+                    height: "fit-content"
+                  }}>
+                    {/* Header */}
+                    <div style={{ textAlign: "center", marginBottom: 20 }}>
+                      <div style={{ fontSize: 40, marginBottom: 8 }}>🏆</div>
+                      <div style={{ color: "#EF9F27", fontWeight: 800, fontSize: 13, letterSpacing: 2, textTransform: "uppercase", marginBottom: 6 }}>
+                        Player of the Match
+                      </div>
+                      <div style={{ fontSize: 26, fontWeight: 900, color: "#fff", letterSpacing: 0.5 }}>
+                        {potmName}
+                      </div>
+                    </div>
+
+                    {/* Performance stats */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                      {batPerf && (
+                        <div style={{
+                          background: "#0d0d0d",
+                          borderRadius: 12, padding: "16px 20px",
+                          border: "1px solid #EF9F2733",
+                        }}>
+                          <div style={{ color: "#EF9F27", fontSize: 11, fontWeight: 700, letterSpacing: 1, marginBottom: 14, textTransform: "uppercase" }}>
+                            🏏 Batting
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-around" }}>
+                            <div style={{ textAlign: "center" }}>
+                              <div style={{ fontSize: 24, fontWeight: 900, color: "#EF9F27" }}>{batPerf.runs}</div>
+                              <div style={{ fontSize: 10, color: "#666" }}>Runs</div>
+                            </div>
+                            <div style={{ textAlign: "center" }}>
+                              <div style={{ fontSize: 24, fontWeight: 900, color: "#fff" }}>{batPerf.balls}</div>
+                              <div style={{ fontSize: 10, color: "#666" }}>Balls</div>
+                            </div>
+                            <div style={{ textAlign: "center" }}>
+                              <div style={{ fontSize: 24, fontWeight: 900, color: "#fff" }}>
+                                {batPerf.balls > 0 ? ((batPerf.runs / batPerf.balls) * 100).toFixed(1) : "0.0"}
+                              </div>
+                              <div style={{ fontSize: 10, color: "#666" }}>SR</div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {bowlPerf && (
+                        <div style={{
+                          background: "#0d0d0d",
+                          borderRadius: 12, padding: "16px 20px",
+                          border: "1px solid #7F77DD33",
+                        }}>
+                          <div style={{ color: "#7F77DD", fontSize: 11, fontWeight: 700, letterSpacing: 1, marginBottom: 14, textTransform: "uppercase" }}>
+                            🎯 Bowling
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-around" }}>
+                            <div style={{ textAlign: "center" }}>
+                              <div style={{ fontSize: 24, fontWeight: 900, color: "#7F77DD" }}>{bowlPerf.wickets}</div>
+                              <div style={{ fontSize: 10, color: "#666" }}>Wkts</div>
+                            </div>
+                            <div style={{ textAlign: "center" }}>
+                              <div style={{ fontSize: 24, fontWeight: 900, color: "#fff" }}>{bowlPerf.overs}</div>
+                              <div style={{ fontSize: 10, color: "#666" }}>Overs</div>
+                            </div>
+                            <div style={{ textAlign: "center" }}>
+                              <div style={{ fontSize: 24, fontWeight: 900, color: "#fff" }}>
+                                {bowlPerf.overs > 0 ? (bowlPerf.runs_conceded / parseFloat(bowlPerf.overs)).toFixed(2) : "-"}
+                              </div>
+                              <div style={{ fontSize: 10, color: "#666" }}>Eco</div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })() : (
+                <div style={{ padding: 40, textAlign: "center", color: "#444", background: "#111", borderRadius: 16, border: "1px dashed #333" }}>
+                  Player of the match will be announced after completion.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {typeof activeTab === "number" && currentInnings && (
+          <div style={{ animation: "fadeIn 0.4s ease-out" }}>
+            <h3 style={{ marginBottom: 16, color: "#d85a30" }}>
               {currentInnings.team_name} - {currentInnings.total_runs}/
               {currentInnings.total_wickets} ({oversDisplay(currentInnings)})
             </h3>
+
 
             <h2>Batting</h2>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -426,142 +619,13 @@ export default function UserMatchDetailsPage() {
             </table>
           </div>
         )}
-
-        {match && (match.potm_name || match.player_of_match) ? (() => {
-          const potmName = match.potm_name || match.player_of_match;
-
-          // Find batting performance across all innings
-          let batPerf = null;
-          for (const inn of innings) {
-            const rows = batting[inn.innings_id] || [];
-            const row = rows.find((b) => b.player_name === potmName);
-            if (row && row.dismissal_type !== "did not bat") {
-              batPerf = row;
-              break;
-            }
-          }
-
-          // Find bowling performance across all innings
-          let bowlPerf = null;
-          for (const inn of innings) {
-            const rows = bowling[inn.innings_id] || [];
-            const row = rows.find((b) => b.player_name === potmName);
-            if (row && (parseFloat(row.overs) > 0 || parseInt(row.wickets) > 0)) {
-              bowlPerf = row;
-              break;
-            }
-          }
-
-          return (
-            <div style={{
-              marginTop: 40, padding: "28px 24px",
-              background: "linear-gradient(135deg, #1a1200 0%, #111 60%, #0d0d0d 100%)",
-              borderRadius: 16, border: "1px solid #EF9F2766",
-              boxShadow: "0 0 32px rgba(239,159,39,0.08)",
-            }}>
-              {/* Header */}
-              <div style={{ textAlign: "center", marginBottom: 20 }}>
-                {/* Trophy icon */}
-                <div style={{ fontSize: 40, marginBottom: 8 }}>🏆</div>
-                <div style={{ color: "#EF9F27", fontWeight: 800, fontSize: 13, letterSpacing: 2, textTransform: "uppercase", marginBottom: 6 }}>
-                  Player of the Match
-                </div>
-                <div style={{ fontSize: 26, fontWeight: 900, color: "#fff", letterSpacing: 0.5 }}>
-                  {potmName}
-                </div>
-              </div>
-
-              {/* Performance stats */}
-              {(batPerf || bowlPerf) && (
-                <div style={{ display: "flex", gap: 16, flexWrap: "wrap", justifyContent: "center", marginTop: 20 }}>
-                  {/* Batting stats */}
-                  {batPerf && (
-                    <div style={{
-                      flex: 1, minWidth: 200, background: "#0d0d0d",
-                      borderRadius: 12, padding: "16px 20px",
-                      border: "1px solid #EF9F2733",
-                    }}>
-                      <div style={{ color: "#EF9F27", fontSize: 11, fontWeight: 700, letterSpacing: 1, marginBottom: 14, textTransform: "uppercase" }}>
-                        🏏 Batting
-                      </div>
-                      <div style={{ display: "flex", justifyContent: "space-around", marginBottom: 14 }}>
-                        <div style={{ textAlign: "center" }}>
-                          <div style={{ fontSize: 32, fontWeight: 900, color: "#EF9F27" }}>{batPerf.runs}</div>
-                          <div style={{ fontSize: 11, color: "#666" }}>Runs</div>
-                        </div>
-                        <div style={{ width: 1, background: "#1a1a1a" }} />
-                        <div style={{ textAlign: "center" }}>
-                          <div style={{ fontSize: 32, fontWeight: 900, color: "#fff" }}>{batPerf.balls}</div>
-                          <div style={{ fontSize: 11, color: "#666" }}>Balls</div>
-                        </div>
-                        <div style={{ width: 1, background: "#1a1a1a" }} />
-                        <div style={{ textAlign: "center" }}>
-                          <div style={{ fontSize: 32, fontWeight: 900, color: "#fff" }}>
-                            {batPerf.balls > 0 ? ((batPerf.runs / batPerf.balls) * 100).toFixed(1) : "0.0"}
-                          </div>
-                          <div style={{ fontSize: 11, color: "#666" }}>SR</div>
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-                        <span style={{ background: "#EF9F2722", border: "1px solid #EF9F2744", borderRadius: 6, padding: "3px 10px", fontSize: 12, color: "#EF9F27" }}>
-                          {batPerf.fours || 0} × 4s
-                        </span>
-                        <span style={{ background: "#d85a3022", border: "1px solid #d85a3044", borderRadius: 6, padding: "3px 10px", fontSize: 12, color: "#d85a30" }}>
-                          {batPerf.sixes || 0} × 6s
-                        </span>
-                        <span style={{ background: "#22222a", borderRadius: 6, padding: "3px 10px", fontSize: 12, color: "#888" }}>
-                          {batPerf.dismissal_type === "not out" ? "not out ✅" : batPerf.dismissal_type}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Bowling stats */}
-                  {bowlPerf && (
-                    <div style={{
-                      flex: 1, minWidth: 200, background: "#0d0d0d",
-                      borderRadius: 12, padding: "16px 20px",
-                      border: "1px solid #7F77DD33",
-                    }}>
-                      <div style={{ color: "#7F77DD", fontSize: 11, fontWeight: 700, letterSpacing: 1, marginBottom: 14, textTransform: "uppercase" }}>
-                        🎯 Bowling
-                      </div>
-                      <div style={{ display: "flex", justifyContent: "space-around", marginBottom: 14 }}>
-                        <div style={{ textAlign: "center" }}>
-                          <div style={{ fontSize: 32, fontWeight: 900, color: "#7F77DD" }}>{bowlPerf.wickets}</div>
-                          <div style={{ fontSize: 11, color: "#666" }}>Wickets</div>
-                        </div>
-                        <div style={{ width: 1, background: "#1a1a1a" }} />
-                        <div style={{ textAlign: "center" }}>
-                          <div style={{ fontSize: 32, fontWeight: 900, color: "#fff" }}>{bowlPerf.overs}</div>
-                          <div style={{ fontSize: 11, color: "#666" }}>Overs</div>
-                        </div>
-                        <div style={{ width: 1, background: "#1a1a1a" }} />
-                        <div style={{ textAlign: "center" }}>
-                          <div style={{ fontSize: 32, fontWeight: 900, color: "#fff" }}>
-                            {bowlPerf.overs > 0 ? (bowlPerf.runs_conceded / parseFloat(bowlPerf.overs)).toFixed(2) : "-"}
-                          </div>
-                          <div style={{ fontSize: 11, color: "#666" }}>Economy</div>
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-                        <span style={{ background: "#22222a", borderRadius: 6, padding: "3px 10px", fontSize: 12, color: "#888" }}>
-                          {bowlPerf.runs_conceded} runs conceded
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Fallback if no stats found */}
-                  {!batPerf && !bowlPerf && (
-                    <p style={{ color: "#666", fontSize: 14, textAlign: "center" }}>Performance data not available</p>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })() : null}
-      </div>{ }
+      </div>
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
       <MatchBoundaryChart innings={innings} batting={batting} match={match} />
     </div>
   );

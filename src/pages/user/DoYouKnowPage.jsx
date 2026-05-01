@@ -150,28 +150,20 @@ export default function DoYouKnowPage() {
                       gap: 8,
                       flexWrap: "wrap"
                     }}>
-                      <span style={{ 
-                        fontSize: 10, 
-                        background: "#222", 
-                        padding: "4px 10px", 
-                        borderRadius: 6, 
-                        color: "#666",
-                        textTransform: "uppercase",
-                        letterSpacing: 1
-                      }}>
-                        #IPLHistory
-                      </span>
-                      <span style={{ 
-                        fontSize: 10, 
-                        background: "#222", 
-                        padding: "4px 10px", 
-                        borderRadius: 6, 
-                        color: "#666",
-                        textTransform: "uppercase",
-                        letterSpacing: 1
-                      }}>
-                        #DailyMoments
-                      </span>
+                      {(moment.tags || ["IPLHistory"]).map(tag => (
+                        <span key={tag} style={{ 
+                          fontSize: 10, 
+                          background: "rgba(255,255,255,0.05)", 
+                          padding: "4px 10px", 
+                          borderRadius: 6, 
+                          color: "#777",
+                          textTransform: "uppercase",
+                          letterSpacing: 1,
+                          border: "1px solid rgba(255,255,255,0.05)"
+                        }}>
+                          #{tag}
+                        </span>
+                      ))}
                     </div>
                   </div>
                 </div>

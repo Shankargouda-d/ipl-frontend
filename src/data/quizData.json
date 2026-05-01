@@ -1,0 +1,30 @@
+{
+  "2026-04-30": [
+    {
+      "id": "q1_30042026",
+      "question": "Which player scored more runs against GT?",
+      "options": ["Rohit Sharma", "Virat Kohli", "Will Jacks", "KL Rahul"],
+      "answer": "Virat Kohli"
+    },
+    {
+      "id": "q2_30042026",
+      "question": "Which player has the most Player of the Match awards in IPL?",
+      "options": ["Virat Kohli", "AB de Villiers", "David Warner", "MS Dhoni"],
+      "answer": "AB de Villiers"
+    },
+    {
+      "id": "q3_30042026",
+      "question": "Who is the first Indian to score a century in IPL?",
+      "options": ["Brendon McCullum", "AB de Villiers", "Manish Pandey", "Virat Kohli"],
+      "answer": "Manish Pandey"
+    }
+  ],
+  "2026-05-01": [
+    {
+      "id": "q1_01052026",
+      "question": "Who holds the record for the highest individual score in IPL history?",
+      "options": ["Chris Gayle", "Brendon McCullum", "Quinton de Kock", "AB de Villiers"],
+      "answer": "Chris Gayle"
+    }
+  ]
+}

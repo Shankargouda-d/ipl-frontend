@@ -350,6 +350,7 @@ function TopCard({ icon, title, accentColor, player, statKey, statLabel, statSuf
 export default function UserHomePage() {
   const [live, setLive] = useState([]);
   const [upcoming, setUpcoming] = useState([]);
+  const [recent, setRecent] = useState([]);
   const [orangeCap, setOrangeCap] = useState(null);
   const [purpleCap, setPurpleCap] = useState(null);
   const [mostSixes, setMostSixes] = useState(null);
@@ -361,6 +362,7 @@ export default function UserHomePage() {
   useEffect(() => {
     http.get("/matches?status=live").then((r) => setLive(r.data));
     http.get("/matches?status=scheduled").then((r) => setUpcoming(r.data.slice(0, 3)));
+    http.get("/matches?status=completed").then((r) => setRecent(r.data.slice(0, 2)));
 
     Promise.all([
       http.get("/stats/orange-cap"),
@@ -468,6 +470,21 @@ export default function UserHomePage() {
               <h2 style={{ margin: 0, fontSize: 18 }}>🟢 Live Now</h2>
             </div>
             {live.map((m) => <MatchCard key={m.match_id} match={m} />)}
+          </div>
+        )}
+
+        {/* Recently Completed matches */}
+        {recent.length > 0 && (
+          <div style={{ marginBottom: 32 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+              <div style={{ width: 4, height: 22, background: "#888", borderRadius: 2 }} />
+              <h2 style={{ margin: 0, fontSize: 18 }}>🏁 Recently Completed</h2>
+            </div>
+            {recent.map((m) => (
+              <div key={m.match_id}>
+                <MatchCard match={m} />
+              </div>
+            ))}
           </div>
         )}
 

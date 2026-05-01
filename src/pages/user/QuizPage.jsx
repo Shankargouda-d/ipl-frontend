@@ -61,12 +61,13 @@ export default function QuizPage() {
       await http.post("/quiz/attempt", {
         visitor_id: visitorId,
         question_id: questionId,
+        selected_option: selectedOption,
         is_correct: isCorrect,
         points_earned: pointsDelta
       });
 
       // Update local state
-      setAttempts(prev => ({ ...prev, [questionId]: { isCorrect } }));
+      setAttempts(prev => ({ ...prev, [questionId]: { selectedOption, isCorrect } }));
       setUserStats(prev => ({ ...prev, total_points: prev.total_points + pointsDelta }));
       setPointsChange({ amount: pointsDelta, type: isCorrect ? 'plus' : 'minus' });
       
@@ -77,6 +78,7 @@ export default function QuizPage() {
       setTimeout(() => setPointsChange(null), 2000);
     } catch (err) {
       console.error("Failed to submit answer:", err);
+      alert("Failed to save answer: " + (err.response?.data?.error || err.message));
     } finally {
       setSubmitting(false);
     }
@@ -209,21 +211,32 @@ export default function QuizPage() {
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                       {q.options.map(option => {
-                        const isSelected = attempt && (option === q.answer ? attempt.isCorrect : !attempt.isCorrect); // simplified logic for demo
+                        const isSelected = attempt?.selectedOption === option;
                         const isCorrectOption = option === q.answer;
+                        
                         let borderColor = "#333", background = "rgba(255,255,255,0.03)", glow = "none";
+                        
                         if (attempt) {
-                          if (isCorrectOption) { borderColor = "#639922"; background = "rgba(99,153,34,0.1)"; }
-                          else if (isSelected) { borderColor = "#ff4444"; background = "rgba(255,68,68,0.1)"; }
+                          if (isCorrectOption) { 
+                            borderColor = "#639922"; 
+                            background = "rgba(99,153,34,0.1)"; 
+                            if (isSelected) glow = "0 0 20px rgba(99,153,34,0.4)";
+                          } else if (isSelected) { 
+                            borderColor = "#ff4444"; 
+                            background = "rgba(255,68,68,0.1)"; 
+                            glow = "0 0 20px rgba(255,68,68,0.4)";
+                          }
                         }
+                        
                         return (
                           <button key={option} disabled={!!attempt || submitting} onClick={() => handleAnswer(q.id, option, q.answer)}
-                            style={{ padding: "16px 20px", borderRadius: 16, border: `1px solid ${borderColor}`, background: background, color: attempt ? (isCorrectOption ? "#fff" : "#666") : "#fff", cursor: attempt ? "default" : "pointer", fontSize: 15, fontWeight: 600, textAlign: "left", transition: "all 0.2s", boxShadow: glow }}
+                            style={{ padding: "16px 20px", borderRadius: 16, border: `1px solid ${borderColor}`, background: background, color: attempt ? (isCorrectOption ? "#fff" : (isSelected ? "#fff" : "#666")) : "#fff", cursor: attempt ? "default" : "pointer", fontSize: 15, fontWeight: 600, textAlign: "left", transition: "all 0.2s", boxShadow: glow }}
                             onMouseEnter={e => { if (!attempt) { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.borderColor = "#d85a30"; } }}
                             onMouseLeave={e => { if (!attempt) { e.currentTarget.style.background = background; e.currentTarget.style.borderColor = borderColor; } }}
                           >
                             {option}
                             {attempt && isCorrectOption && <span style={{ float: "right" }}>✅</span>}
+                            {attempt && isSelected && !attempt.isCorrect && <span style={{ float: "right" }}>❌</span>}
                           </button>
                         );
                       })}

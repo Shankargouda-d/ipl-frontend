@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import http from "../../api/http";
 import { getTeamColor } from "../../utils/teamColors";
 import MatchPrediction from "../../components/MatchPrediction";
+import DailyMomentSnippet from "../../components/DailyMomentSnippet";
 
 // Generate a random visitor ID if not present
 const getVisitorId = () => {
@@ -417,6 +418,9 @@ export default function UserHomePage() {
       </div>
 
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "36px 16px" }}>
+        
+        {/* Daily Moment Snippet */}
+        <DailyMomentSnippet />
 
         {/* ── Top Performers Widget ── */}
         <div style={{ marginBottom: 48 }}>

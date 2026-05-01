@@ -1,0 +1,24 @@
+{
+  "2026-04-27": [
+    {
+      "id": "moment_2704_1",
+      "title": "Virat Kohli's Milestone",
+      "text": "The only player to reach 9000 runs in IPL history—Virat Kohli.",
+      "image": "/assets/moments/kohli_9k.jpg"
+    },
+    {
+      "id": "moment_2704_2",
+      "title": "The Curse of April 27",
+      "text": "The most wickets in a single day fell twice in history on this exact date: RCB vs RR and Kochi Tuskers vs RR. Both happened on the same day, April 27th.",
+      "image": null
+    }
+  ],
+  "2026-04-28": [
+    {
+      "id": "moment_2804_1",
+      "title": "The Gayle Storm",
+      "text": "Chris Gayle holds the record for the fastest century in IPL history, reaching 100 in just 30 balls.",
+      "image": null
+    }
+  ]
+}

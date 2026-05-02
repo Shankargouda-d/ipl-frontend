@@ -25,6 +25,38 @@
       "question": "Who holds the record for the highest individual score in IPL history?",
       "options": ["Chris Gayle", "Brendon McCullum", "Quinton de Kock", "AB de Villiers"],
       "answer": "Chris Gayle"
+    },
+    {
+      "id": "q2_01052026",
+      "question": "Which player scored a century in an IPL season but didn't cross 200 total runs in that same season?",
+      "options": ["KL Rahul", "Gautam Gambhir", "Harry Brook", "Ben Stokes"],
+      "answer": "Harry Brook"
+    },
+    {
+      "id": "q3_01052026",
+      "question": "What is the highest partnership record in IPL history?",
+      "options": ["229", "225", "220", "210"],
+      "answer": "229"
+    }
+  ],
+  "2026-05-02": [
+    {
+      "id": "q1_02052026",
+      "question": "Who holds the record for the highest individual score for Mumbai Indians in IPL history?",
+      "options": ["Rohit Sharma", "Suryakumar Yadav", "Ryan Rickelton", "Quinton de Kock"],
+      "answer": "Ryan Rickelton"
+    },
+    {
+      "id": "q2_02052026",
+      "question": "How many times have MI and CSK faced each other in an IPL Final?",
+      "options": ["4", "5", "6", "3"],
+      "answer": "4"
+    },
+    {
+      "id": "q3_02052026",
+      "question": "Which CSK player scored a century against MI in IPL 2026?",
+      "options": ["Sanju Samson", "Ruturaj Gaikwad", "Faf du Plessis", "Shane Watson"],
+      "answer": "Sanju Samson"
     }
   ]
 }

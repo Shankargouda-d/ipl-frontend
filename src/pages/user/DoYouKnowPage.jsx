@@ -95,18 +95,11 @@ export default function DoYouKnowPage() {
                   borderRadius: 24,
                   border: "1px solid #222",
                   overflow: "hidden",
-                  display: "flex",
-                  flexDirection: window.innerWidth < 600 ? "column" : "row",
+                  className: "moment-card",
                   animation: `fadeIn 0.5s ease-out ${index * 0.1}s both`
                 }}>
                   {moment.image && (
-                    <div style={{ 
-                      width: window.innerWidth < 600 ? "100%" : "300px", 
-                      height: window.innerWidth < 600 ? "200px" : "auto",
-                      background: "#1a1a1a",
-                      position: "relative",
-                      overflow: "hidden"
-                    }}>
+                    <div className="moment-image-container">
                       <img 
                         src={moment.image} 
                         alt={moment.title}
@@ -114,7 +107,8 @@ export default function DoYouKnowPage() {
                         style={{
                           width: "100%",
                           height: "100%",
-                          objectFit: "cover"
+                          objectFit: "cover",
+                          objectPosition: "center top"
                         }}
                       />
                       {/* Overlay for image depth */}
@@ -177,6 +171,30 @@ export default function DoYouKnowPage() {
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .moment-card {
+          display: flex;
+          flex-direction: row;
+        }
+
+        .moment-image-container {
+          width: 300px;
+          height: auto;
+          background: #1a1a1a;
+          position: relative;
+          overflow: hidden;
+          flex-shrink: 0;
+        }
+
+        @media (max-width: 600px) {
+          .moment-card {
+            flex-direction: column;
+          }
+          .moment-image-container {
+            width: 100%;
+            height: 250px; /* Increased height for better visibility */
+          }
         }
       `}</style>
     </div>

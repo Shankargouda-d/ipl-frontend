@@ -97,7 +97,7 @@ export default function UserPointsTablePage() {
                   status = "Strong Chance";
                   statusColor = "#639922";
                 } else if (t.max_possible_points < 14) {
-                  status = "Nearly Eliminated";
+                  status = "Out of Hunt";
                   statusColor = "#e24b4a";
                 } else if (t.points >= 16) {
                   status = "Safe Zone";

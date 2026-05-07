@@ -265,8 +265,8 @@ export default function TeamCompare() {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '4px' }}>
                   <span style={{ color: '#aaa', fontSize: '13px' }}>Playoff Chance</span>
-                  <span style={{ fontWeight: 900, fontSize: '18px', color: chance >= 50 ? '#639922' : chance > 0 ? '#f39c12' : '#e24b4a' }}>
-                    {chance}%
+                  <span style={{ fontWeight: 900, fontSize: chance === 0 ? '14px' : '18px', color: chance >= 50 ? '#639922' : chance > 0 ? '#f39c12' : '#e24b4a' }}>
+                    {chance === 0 ? 'Out of Hunt' : `${chance}%`}
                   </span>
                 </div>
               </div>

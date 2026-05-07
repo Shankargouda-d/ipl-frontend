@@ -11,10 +11,12 @@ export default function TeamCompare() {
   const [team1Id, setTeam1Id] = useState('');
   const [team2Id, setTeam2Id] = useState('');
   const [comparison, setComparison] = useState(null);
+  const [points, setPoints] = useState([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     http.get('/teams').then(r => setTeams(r.data));
+    http.get('/points').then(r => setPoints(r.data));
   }, []);
 
   useEffect(() => {
@@ -42,6 +44,29 @@ export default function TeamCompare() {
   // Overall Stats Processing
   const team1Data = comparison?.find(t => String(t.team_id) === String(team1Id)) || {};
   const team2Data = comparison?.find(t => String(t.team_id) === String(team2Id)) || {};
+
+  const getQualificationChance = (winsNeeded, matchesLeft) => {
+    if (winsNeeded <= 0) return 100;
+    if (winsNeeded > matchesLeft) return 0;
+    let favorableOutcomes = 0;
+    const totalOutcomes = Math.pow(2, matchesLeft);
+    const nCr = (n, r) => {
+      if (r === 0 || n === r) return 1;
+      let res = 1;
+      for (let i = 1; i <= r; i++) res = res * (n - i + 1) / i;
+      return res;
+    };
+    for (let i = winsNeeded; i <= matchesLeft; i++) favorableOutcomes += nCr(matchesLeft, i);
+    return Math.round((favorableOutcomes / totalOutcomes) * 100);
+  };
+
+  const t1Points = points.find(p => String(p.team_id) === String(team1Id)) || {};
+  const t2Points = points.find(p => String(p.team_id) === String(team2Id)) || {};
+  const t1Pos = points.findIndex(p => String(p.team_id) === String(team1Id)) + 1 || '-';
+  const t2Pos = points.findIndex(p => String(p.team_id) === String(team2Id)) + 1 || '-';
+  const t1Chance = getQualificationChance(t1Points.wins_needed_to_16, t1Points.matches_left);
+  const t2Chance = getQualificationChance(t2Points.wins_needed_to_16, t2Points.matches_left);
+
 
   // 4s Comparison (percentage pie: team1 vs team2)
   const t1Fours = Number(team1Data.total_fours || 0);
@@ -206,11 +231,46 @@ export default function TeamCompare() {
               </div>
 
               {/* Head to Head Aggregate Stats */}
+              <StatRow label="Matches Played" key1="matches_played" icon={Trophy} />
               <StatRow label="Matches Won" key1="matches_won" icon={Trophy} />
               <StatRow label="Avg Runs / Match" key1="avg_runs" icon={Zap} />
               <StatRow label="Total Wickets" key1="total_wickets" icon={Shield} />
               <StatRow label="Total Boundaries (Runs)" key1="total_runs" icon={Target} />
             </div>
+          </div>
+
+          {/* Tournament Context (Points Table Info) */}
+          <h3 style={{ marginTop: '40px', marginBottom: '20px', fontSize: '20px', color: '#fff', borderLeft: '4px solid #3b82f6', paddingLeft: '12px' }}>
+            Tournament Context
+          </h3>
+          <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', marginBottom: '40px' }}>
+            {[
+              { t: team1, p: t1Points, pos: t1Pos, chance: t1Chance, color: team1Color },
+              { t: team2, p: t2Points, pos: t2Pos, chance: t2Chance, color: team2Color }
+            ].map(({ t, p, pos, chance, color }, idx) => (
+              <div key={idx} style={{ ...chartCardStyle, flex: '1 1 280px', borderLeft: `4px solid ${color}` }}>
+                <h4 style={{ margin: '0 0 16px', fontSize: '18px', color: '#fff', display: 'flex', justifyContent: 'space-between' }}>
+                  {t?.team_name}
+                  <span style={{ fontSize: '14px', color: '#888', background: 'rgba(0,0,0,0.5)', padding: '2px 8px', borderRadius: '10px' }}>Rank #{pos}</span>
+                </h4>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', borderBottom: '1px solid #2a2a2a', paddingBottom: '8px' }}>
+                  <span style={{ color: '#aaa', fontSize: '13px' }}>Matches Played</span>
+                  <span style={{ fontWeight: 800, fontSize: '14px', color: '#fff' }}>{p.played || 0}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', borderBottom: '1px solid #2a2a2a', paddingBottom: '8px' }}>
+                  <span style={{ color: '#aaa', fontSize: '13px' }}>Wins needed to qualify</span>
+                  <span style={{ fontWeight: 800, fontSize: '14px', color: p.wins_needed_to_16 > (p.matches_left || 0) ? '#e24b4a' : '#fff' }}>
+                    {p.wins_needed_to_16 > 0 ? `${p.wins_needed_to_16} (of ${p.matches_left} left)` : '0 (Qualified)'}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '4px' }}>
+                  <span style={{ color: '#aaa', fontSize: '13px' }}>Playoff Chance</span>
+                  <span style={{ fontWeight: 900, fontSize: '18px', color: chance >= 50 ? '#639922' : chance > 0 ? '#f39c12' : '#e24b4a' }}>
+                    {chance}%
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
 
           {/* Boundaries Comparison Section */}

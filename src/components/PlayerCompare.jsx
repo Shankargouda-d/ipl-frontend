@@ -783,7 +783,7 @@ export default function PlayerCompare() {
                     borderRadius: 20,
                   }}
                 >
-                  {p1.short_name}
+                  {p1.short_name} · {p1.role}
                 </span>
               </div>
 
@@ -827,7 +827,7 @@ export default function PlayerCompare() {
                     borderRadius: 20,
                   }}
                 >
-                  {p2.short_name}
+                  {p2.short_name} · {p2.role}
                 </span>
               </div>
             </div>

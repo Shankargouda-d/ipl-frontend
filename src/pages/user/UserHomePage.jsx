@@ -5,6 +5,13 @@ import { getTeamColor } from "../../utils/teamColors";
 import MatchPrediction from "../../components/MatchPrediction";
 import DailyMomentSnippet from "../../components/DailyMomentSnippet";
 
+const CapIcon = ({ color, size = 18 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={color} style={{ verticalAlign: "middle" }}>
+    <path d="M12 4C8.13401 4 5 7.13401 5 11V13H19V11C19 7.13401 15.866 4 12 4Z" />
+    <path d="M3 13H21C21.5523 13 22 13.4477 22 14C22 14.5523 21.5523 15 21 15H3C2.44772 15 2 14.5523 2 14C2 13.4477 2.44772 13 3 13Z" />
+  </svg>
+);
+
 // Generate a random visitor ID if not present
 const getVisitorId = () => {
   let vid = localStorage.getItem("ipl_visitor_id");
@@ -439,7 +446,7 @@ export default function UserHomePage() {
           ) : (
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
               <TopCard
-                icon="🟠"
+                icon={<CapIcon color="#d85a30" size={32} />}
                 title="Orange Cap"
                 accentColor="#d85a30"
                 player={orangeCap}
@@ -447,7 +454,7 @@ export default function UserHomePage() {
                 statLabel="RUNS"
               />
               <TopCard
-                icon="🟣"
+                icon={<CapIcon color="#7F77DD" size={32} />}
                 title="Purple Cap"
                 accentColor="#7F77DD"
                 player={purpleCap}

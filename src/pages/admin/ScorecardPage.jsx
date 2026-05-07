@@ -29,7 +29,13 @@ function calcSR(runs, balls) {
 
 function calcEco(runs, overs) {
   if (!overs || parseFloat(overs) === 0) return "0.00";
-  return (parseInt(runs) / parseFloat(overs)).toFixed(2);
+  const str = String(overs);
+  const parts = str.split(".");
+  const completedOvers = parseInt(parts[0]) || 0;
+  const balls = parts[1] ? parseInt(parts[1]) : 0;
+  const totalBalls = completedOvers * 6 + balls;
+  if (totalBalls === 0) return "0.00";
+  return ((parseInt(runs) / totalBalls) * 6).toFixed(2);
 }
 
 function validateInnings(batting, bowling, overs) {

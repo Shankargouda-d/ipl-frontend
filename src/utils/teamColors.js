@@ -6,12 +6,12 @@
 const TEAM_COLOR_MAP = [
   { keywords: ["rcb", "royal challengers"], color: "#EC1C24" },       // RCB  — bold red
   { keywords: ["srh", "sunrisers"],         color: "#EE7429" },       // SRH  — vivid orange
-  { keywords: ["kkr", "knight riders"],     color: "#3A225D" },       // KKR  — deep purple
+  { keywords: ["kkr", "knight riders"],     color: "#8852daff" },       // KKR  — deep purple
   { keywords: ["csk", "super kings"],       color: "#F9CD05" },       // CSK  — golden yellow
   { keywords: ["mi", "mumbai indians"],     color: "#004BA0" },       // MI   — navy blue
   { keywords: ["rr", "rajasthan"],          color: "#E91E8C" },       // RR   — hot pink
   { keywords: ["lsg", "lucknow"],           color: "#8B2FC9" },       // LSG  — red-blue-maroon → purple-maroon blend
-  { keywords: ["gt", "gujarat titans"],     color: "#0D0F6E" },       // GT   — dark navy blue
+  { keywords: ["gt", "gujarat titans"],     color: "#393bd3ff" },       // GT   — dark navy blue
   { keywords: ["pbks", "punjab kings"],     color: "#C0185A" },       // PBKS — dark crimson-pink/red
   { keywords: ["dc", "delhi capitals"],     color: "#2E86DE" },       // DC   — sky-steel blue (distinct from MI navy)
 ];

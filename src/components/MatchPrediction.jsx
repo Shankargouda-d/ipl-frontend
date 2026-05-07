@@ -54,7 +54,7 @@ export default function MatchPrediction({ match }) {
       padding: "16px", marginTop: "-4px", marginBottom: "16px"
     }}>
       <div style={{ textAlign: "center", fontSize: 13, color: "#aaa", marginBottom: 12, fontWeight: 600, letterSpacing: 0.5 }}>
-        {hasVoted ? "Prediction Results" : "Who will win?"}
+        {hasVoted ? "Viewers Prediction Results" : "Who will win?"}
       </div>
 
       <div style={{ display: "flex", gap: 12, marginBottom: hasVoted && total_votes > 0 ? 16 : 0 }}>

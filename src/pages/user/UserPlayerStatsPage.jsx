@@ -4,6 +4,24 @@ import http from "../../api/http";
 import PlayerCompare from "../../components/PlayerCompare";
 import { getTeamColor } from "../../utils/teamColors";
 
+const CapIcon = ({ color, size = 18 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={color} style={{ verticalAlign: "middle", marginRight: 6 }}>
+    <path d="M12 4C8.13401 4 5 7.13401 5 11V13H19V11C19 7.13401 15.866 4 12 4Z" />
+    <path d="M3 13H21C21.5523 13 22 13.4477 22 14C22 14.5523 21.5523 15 21 15H3C2.44772 15 2 14.5523 2 14C2 13.4477 2.44772 13 3 13Z" />
+  </svg>
+);
+
+function calcEco(runs, overs) {
+  if (!overs || parseFloat(overs) === 0) return "0.00";
+  const str = String(overs);
+  const parts = str.split(".");
+  const completedOvers = parseInt(parts[0]) || 0;
+  const balls = parts[1] ? parseInt(parts[1]) : 0;
+  const totalBalls = completedOvers * 6 + balls;
+  if (totalBalls === 0) return "0.00";
+  return ((parseInt(runs) / totalBalls) * 6).toFixed(2);
+}
+
 const TABS = [
   { key: "orange", label: "Orange Cap" },
   { key: "purple", label: "Purple Cap" },
@@ -45,17 +63,17 @@ export default function UserPlayerStatsPage() {
 
         {loading && <p style={{ color: "#666" }}>Loading...</p>}
 
-        {/* Orange Cap — removed 50s & 100s columns */}
+        {/* Orange Cap — removed 50s, 100s, and Avg columns */}
         {tab === "orange" && !loading && (
-          <LeaderboardCard title="🟠 Orange Cap — Most Runs" color="#d85a30">
+          <LeaderboardCard title={<><CapIcon color="#d85a30" /> Orange Cap — Most Runs</>} color="#d85a30">
             <table style={tableStyle}>
-              <thead><tr>{["#","Player","Team","M","Runs","4s","6s","HS","Avg"].map((h) => <th key={h} style={thS}>{h}</th>)}</tr></thead>
+              <thead><tr>{["#","Player","Team","M","Runs","4s","6s","HS"].map((h) => <th key={h} style={thS}>{h}</th>)}</tr></thead>
               <tbody>
                 {data.map((p, i) => {
                   const tc = getTeamColor(p.short_name);
                   return (
                     <tr key={p.player_id} style={{ borderBottom: "1px solid #111", background: `${tc}18`, borderLeft: `3px solid ${tc}` }}>
-                      <td style={tdS}>{i === 0 ? "🟠" : i + 1}</td>
+                      <td style={tdS}>{i === 0 ? <CapIcon color="#d85a30" /> : i + 1}</td>
                       <td style={{ ...tdS, fontWeight: 600 }}>{p.player_name}</td>
                       <td style={tdS}><TeamBadge name={p.short_name} color={tc} /></td>
                       <td style={tdS}>{p.matches_played}</td>
@@ -63,7 +81,6 @@ export default function UserPlayerStatsPage() {
                       <td style={tdS}>{p.total_fours}</td>
                       <td style={tdS}>{p.total_sixes}</td>
                       <td style={tdS}>{p.highest_score}</td>
-                      <td style={tdS}>{p.batting_avg}</td>
                     </tr>
                   );
                 })}
@@ -75,7 +92,7 @@ export default function UserPlayerStatsPage() {
 
         {/* Purple Cap */}
         {tab === "purple" && !loading && (
-          <LeaderboardCard title="🟣 Purple Cap — Most Wickets" color="#7F77DD">
+          <LeaderboardCard title={<><CapIcon color="#7F77DD" /> Purple Cap — Most Wickets</>} color="#7F77DD">
             <table style={tableStyle}>
               <thead><tr>{["#","Player","Team","M","Wkts","Overs","Runs","Econ","Avg"].map((h) => <th key={h} style={thS}>{h}</th>)}</tr></thead>
               <tbody>
@@ -83,14 +100,14 @@ export default function UserPlayerStatsPage() {
                   const tc = getTeamColor(p.short_name);
                   return (
                     <tr key={p.player_id} style={{ borderBottom: "1px solid #111", background: `${tc}18`, borderLeft: `3px solid ${tc}` }}>
-                      <td style={tdS}>{i === 0 ? "🟣" : i + 1}</td>
+                      <td style={tdS}>{i === 0 ? <CapIcon color="#7F77DD" /> : i + 1}</td>
                       <td style={{ ...tdS, fontWeight: 600 }}>{p.player_name}</td>
                       <td style={tdS}><TeamBadge name={p.short_name} color={tc} /></td>
                       <td style={tdS}>{p.matches_played}</td>
                       <td style={{ ...tdS, fontWeight: 700, color: "#7F77DD", fontSize: 16 }}>{p.total_wickets}</td>
                       <td style={tdS}>{p.total_overs}</td>
                       <td style={tdS}>{p.runs_conceded}</td>
-                      <td style={tdS}>{p.economy}</td>
+                      <td style={tdS}>{calcEco(p.runs_conceded, p.total_overs)}</td>
                       <td style={tdS}>{p.bowling_avg}</td>
                     </tr>
                   );
@@ -104,7 +121,7 @@ export default function UserPlayerStatsPage() {
         {/* 100s */}
         {tab === "hundreds" && !loading && (
           <LeaderboardCard title="💯 Most Centuries" color="#EF9F27">
-            <SimpleStatTable data={data} mainKey="hundreds" mainLabel="100s" color="#EF9F27" showRuns showAvg />
+            <SimpleStatTable data={data} mainKey="hundreds" mainLabel="100s" color="#EF9F27" showRuns showAvg={false} />
           </LeaderboardCard>
         )}
 
